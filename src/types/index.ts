@@ -1,0 +1,31 @@
+export type Provider = 'openai' | 'elevenlabs' | 'gemini'
+
+export interface TranscriptionResponse {
+  text: string
+  confidence?: number
+  duration?: number
+}
+
+export interface ProviderConfig {
+  name: string
+  displayName: string
+  description: string
+  models: string[]
+  isAvailable: boolean
+}
+
+export interface AuthContext {
+  isAuthenticated: boolean
+  user?: {
+    id: string
+    email: string
+    plan?: string
+  }
+}
+
+export interface UsageStats {
+  minutesUsed: number
+  minutesLimit: number
+  requestsCount: number
+  currentPlan: string
+} 
