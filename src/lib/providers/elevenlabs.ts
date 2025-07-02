@@ -3,7 +3,7 @@ import { TranscriptionResponse } from '@/types'
 export async function transcribeElevenLabs(audioFile: File): Promise<TranscriptionResponse> {
   const formData = new FormData()
   formData.append('file', audioFile)
-  formData.append('model', 'eleven_whisper_v1')
+  formData.append('model_id', 'scribe_v1')
 
   const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
     method: 'POST',
