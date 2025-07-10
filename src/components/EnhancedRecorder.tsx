@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Mic, Square, Settings, Zap, Clock } from 'lucide-react'
 import { useWhisperSafe } from '@/hooks/useWhisperSafe'
 import { Provider } from '@/types'
-import WaveformVisualizer from './WaveformVisualizer'
+import SimpleWaveformVisualizer from './SimpleWaveformVisualizer'
 import ProviderSelector from './ProviderSelector'
 import { Button } from './ui/button'
 
@@ -24,10 +24,7 @@ export default function EnhancedRecorder({
   onRecordingStateChange,
   onTranscribingStateChange
 }: EnhancedRecorderProps) {
-  const [audioContext, setAudioContext] = useState<AudioContext>()
-  const [audioStream, setAudioStream] = useState<MediaStream>()
   const [recordingDuration, setRecordingDuration] = useState(0)
-  const [isInitializing, setIsInitializing] = useState(false)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const {
@@ -72,56 +69,7 @@ export default function EnhancedRecorder({
     },
   })
 
-  // Initialize audio context and stream
-  useEffect(() => {
-    const initAudio = async () => {
-      if (!recording) return
-
-      try {
-        setIsInitializing(true)
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          audio: {
-            sampleRate: 16000,
-            channelCount: 1,
-            echoCancellation: true,
-            noiseSuppression: true
-          } 
-        })
-        
-        const context = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 })
-        
-        setAudioStream(stream)
-        setAudioContext(context)
-      } catch (error) {
-        console.error('Failed to initialize audio:', error)
-      } finally {
-        setIsInitializing(false)
-      }
-    }
-
-    if (recording) {
-      initAudio()
-    } else {
-      // Cleanup when not recording
-      if (audioStream) {
-        audioStream.getTracks().forEach(track => track.stop())
-        setAudioStream(undefined)
-      }
-      if (audioContext && audioContext.state !== 'closed') {
-        audioContext.close()
-        setAudioContext(undefined)
-      }
-    }
-
-    return () => {
-      if (audioStream) {
-        audioStream.getTracks().forEach(track => track.stop())
-      }
-      if (audioContext && audioContext.state !== 'closed') {
-        audioContext.close()
-      }
-    }
-  }, [recording])
+  // Simplified audio management - let SimpleWaveformVisualizer handle its own audio
 
   // Track recording duration
   useEffect(() => {
@@ -142,7 +90,7 @@ export default function EnhancedRecorder({
         clearInterval(intervalRef.current)
       }
     }
-  }, [recording, audioContext, audioStream])
+  }, [recording])
 
   // Pass transcript updates to parent
   useEffect(() => {
@@ -177,7 +125,6 @@ export default function EnhancedRecorder({
 
   const getRecordingButtonState = () => {
     if (!isReady) return { text: 'Initializing...', disabled: true, variant: 'outline' as const }
-    if (isInitializing) return { text: 'Preparing Audio...', disabled: true, variant: 'outline' as const }
     if (transcribing) return { text: 'Processing...', disabled: false, variant: 'outline' as const }
     if (recording) return { text: 'Stop Recording', disabled: false, variant: 'destructive' as const }
     return { text: 'Start Recording', disabled: false, variant: 'default' as const }
@@ -234,7 +181,7 @@ export default function EnhancedRecorder({
         {/* Waveform Visualizer */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Audio Input</span>
+            <span className="text-sm font-medium text-gray-700">Audio Waveform</span>
             {recording && speaking && (
               <div className="flex items-center space-x-2 text-sm text-green-600">
                 <Zap className="w-4 h-4" />
@@ -242,9 +189,7 @@ export default function EnhancedRecorder({
               </div>
             )}
           </div>
-          <WaveformVisualizer
-            audioContext={audioContext}
-            audioStream={audioStream}
+          <SimpleWaveformVisualizer
             isRecording={recording}
             className="transition-all duration-300"
           />

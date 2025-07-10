@@ -10,7 +10,7 @@ interface SpeechToTextProps {
 }
 
 export default function SpeechToText({ password }: SpeechToTextProps) {
-  const [provider, setProvider] = useState<Provider>('openai')
+  const [provider, setProvider] = useState<Provider>('elevenlabs')
   const [currentTranscript, setCurrentTranscript] = useState<any>(null)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
