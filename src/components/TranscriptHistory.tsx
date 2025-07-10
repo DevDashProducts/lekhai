@@ -158,21 +158,21 @@ ${transcript.transcript_text}`
 
   const getProviderColor = (provider: Provider) => {
     switch (provider) {
-      case 'openai': return 'bg-green-100 text-green-800'
-      case 'elevenlabs': return 'bg-purple-100 text-purple-800'
-      case 'gemini': return 'bg-blue-100 text-blue-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'openai': return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
+      case 'elevenlabs': return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800'
+      case 'gemini': return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+      default: return 'bg-muted text-muted-foreground'
     }
   }
 
   if (loading && transcripts.length === 0) {
     return (
-      <div className={`bg-white rounded-2xl shadow-xl border border-gray-100 p-6 ${className}`}>
+      <div className={`bg-card border border-border rounded-lg p-6 ${className}`}>
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-6 bg-muted rounded w-1/3"></div>
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 bg-gray-100 rounded"></div>
+              <div key={i} className="h-20 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -181,17 +181,17 @@ ${transcript.transcript_text}`
   }
 
   return (
-    <div className={`bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden ${className}`}>
+    <div className={`bg-card border border-border rounded-lg overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 sm:px-6 py-4 border-b border-gray-100">
+      <div className="bg-muted/50 px-4 py-4 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <History className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <History className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Transcript History</h2>
-              <p className="text-sm text-gray-600">Your recent speech-to-text transcriptions</p>
+              <h2 className="font-medium text-foreground">Transcript History</h2>
+              <p className="text-sm text-muted-foreground">Your recent speech-to-text transcriptions</p>
             </div>
           </div>
         </div>
@@ -199,14 +199,14 @@ ${transcript.transcript_text}`
         {/* Search */}
         <div className="flex space-x-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search transcripts..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && searchTranscripts()}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              onKeyDown={(e) => e.key === 'Enter' && searchTranscripts()}
+              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-ring focus:border-transparent"
             />
           </div>
           <Button
@@ -234,83 +234,85 @@ ${transcript.transcript_text}`
 
       {/* Stats */}
       {stats && (
-        <div className="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-100">
+        <div className="px-4 py-4 bg-muted/30 border-b border-border">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-gray-900">{stats.total_transcripts}</div>
-              <div className="text-xs text-gray-600">Total Transcripts</div>
+            <div className="p-3 bg-background rounded-md">
+              <div className="text-2xl font-bold text-primary">{stats.total_transcripts}</div>
+              <div className="text-xs text-muted-foreground">Total Transcripts</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">{stats.total_duration_hours.toFixed(1)}h</div>
-              <div className="text-xs text-gray-600">Total Duration</div>
+            <div className="p-3 bg-background rounded-md">
+              <div className="text-2xl font-bold text-secondary">{stats.total_duration_hours.toFixed(1)}h</div>
+              <div className="text-xs text-muted-foreground">Total Duration</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">{stats.transcripts_by_provider.length}</div>
-              <div className="text-xs text-gray-600">Providers Used</div>
+            <div className="p-3 bg-background rounded-md">
+              <div className="text-2xl font-bold text-accent">{stats.transcripts_by_provider.length}</div>
+              <div className="text-xs text-muted-foreground">Providers Used</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">{stats.recent_activity.length}</div>
-              <div className="text-xs text-gray-600">Active Days</div>
+            <div className="p-3 bg-background rounded-md">
+              <div className="text-2xl font-bold text-green-600">{stats.recent_activity.length}</div>
+              <div className="text-xs text-muted-foreground">Active Days</div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="p-4 sm:p-6">
+      <div className="p-4">
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-            <p className="text-red-800 text-sm">{error}</p>
+          <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4">
+            <p className="text-destructive text-sm">{error}</p>
           </div>
         )}
 
         {transcripts.length === 0 ? (
           <div className="text-center py-12">
-            <Mic className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No transcripts yet</h3>
-            <p className="text-gray-600">
+            <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-lg flex items-center justify-center">
+              <Mic className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">No transcripts yet</h3>
+            <p className="text-muted-foreground">
               {searchTerm ? 'No transcripts match your search.' : 'Start recording to see your transcripts here.'}
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {transcripts.map((transcript) => (
-              <div key={transcript.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+              <div key={transcript.id} className="group bg-muted/30 rounded-md p-4 hover:bg-muted/50 transition-colors">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getProviderColor(transcript.provider)}`}>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getProviderColor(transcript.provider)}`}>
                       {transcript.provider.toUpperCase()}
                     </span>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <Clock className="w-4 h-4" />
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <Clock className="w-3 h-3" />
                       <span>{formatDuration(transcript.audio_duration_seconds)}</span>
                       {transcript.confidence_score && (
                         <span>• {(transcript.confidence_score * 100).toFixed(0)}% confidence</span>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       onClick={() => exportTranscript(transcript)}
                       size="sm"
                       variant="ghost"
-                      className="text-gray-600 hover:text-gray-900"
+                      className="text-muted-foreground hover:text-foreground"
                     >
-                      <Download className="w-4 h-4" />
+                      <Download className="w-3 h-3" />
                     </Button>
                     <Button
                       onClick={() => deleteTranscript(transcript.id)}
                       size="sm"
                       variant="ghost"
-                      className="text-red-600 hover:text-red-800"
+                      className="text-destructive hover:text-destructive/80"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
                 
-                <p className="text-gray-900 mb-2 line-clamp-3">{transcript.transcript_text}</p>
+                <p className="text-foreground mb-2 line-clamp-3">{transcript.transcript_text}</p>
                 
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground">
                   {new Date(transcript.created_at).toLocaleString()}
                   {transcript.processing_time_ms && (
                     <span> • Processed in {transcript.processing_time_ms}ms</span>

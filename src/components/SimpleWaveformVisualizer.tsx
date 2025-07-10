@@ -1,6 +1,6 @@
 'use client'
 import { useRef, useEffect, useState } from 'react'
-import { Mic, MicOff } from 'lucide-react'
+import { MicOff } from 'lucide-react'
 
 interface SimpleWaveformVisualizerProps {
   isRecording: boolean
@@ -258,17 +258,13 @@ export default function SimpleWaveformVisualizer({
         ref={canvasRef}
         width={800}
         height={120}
-        className="w-full h-20 sm:h-24 bg-gradient-to-br from-gray-50 to-slate-50 rounded-lg border border-gray-200 shadow-sm"
+        className="w-full h-20 sm:h-24 bg-sys-color-surface-container-low rounded-lg border border-gray-200 shadow-sm"
       />
       
       {!isRecording && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 to-slate-50 rounded-lg border border-gray-200">
+        <div className="absolute inset-0 flex items-center justify-center bg-sys-color-surface-container-low rounded-lg border border-gray-200">
           <div className="text-center">
-            <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-              <Mic className="w-6 h-6 text-blue-500" />
-            </div>
-            <p className="text-sm text-gray-600 font-medium">Click to start recording</p>
-            <p className="text-xs text-gray-500 mt-1">Audio waveform will appear here</p>
+          
           </div>
         </div>
       )}

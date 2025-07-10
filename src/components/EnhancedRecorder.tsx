@@ -69,8 +69,6 @@ export default function EnhancedRecorder({
     },
   })
 
-  // Simplified audio management - let SimpleWaveformVisualizer handle its own audio
-
   // Track recording duration
   useEffect(() => {
     if (recording) {
@@ -133,43 +131,39 @@ export default function EnhancedRecorder({
   const buttonState = getRecordingButtonState()
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+    <div className="bg-card border border-border rounded-lg overflow-hidden w-full">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 sm:px-6 py-4 border-b border-gray-100">
+      <div className="bg-muted/50 px-4 py-4 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-              <Mic className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <Mic className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Voice Recording</h2>
-              <p className="text-sm text-gray-600">Real-time speech transcription</p>
+              <h2 className="font-medium text-foreground">Voice Recording</h2>
+              <p className="text-sm text-muted-foreground">Real-time speech transcription</p>
             </div>
           </div>
           
           {recording && (
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Clock className="w-4 h-4" />
-                <span className="font-mono">{formatDuration(recordingDuration)}</span>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 bg-background/80 rounded-md px-2 py-1">
+                <Clock className="w-3 h-3 text-muted-foreground" />
+                <span className="font-mono text-xs text-foreground">{formatDuration(recordingDuration)}</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-red-600">Recording</span>
+              <div className="flex items-center space-x-2 bg-destructive/10 rounded-md px-2 py-1">
+                <div className="w-2 h-2 bg-destructive rounded-full animate-pulse"></div>
+                <span className="text-xs font-medium text-destructive">Recording</span>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="p-4 space-y-4 w-full max-w-full">
         {/* Provider Selection */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
-          <div className="flex items-center space-x-3">
-            <Settings className="w-5 h-5 text-gray-400" />
-            <span className="text-sm font-medium text-gray-700">AI Provider</span>
-          </div>
-          <div className="flex-1 max-w-full sm:max-w-xs">
+        <div className="flex items-center justify-between">
+          <div className="flex">
             <ProviderSelector
               selectedProvider={provider}
               onProviderChange={onProviderChange}
@@ -179,12 +173,12 @@ export default function EnhancedRecorder({
         </div>
 
         {/* Waveform Visualizer */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Audio Waveform</span>
+            <span className="text-sm font-medium text-foreground">Audio Waveform</span>
             {recording && speaking && (
-              <div className="flex items-center space-x-2 text-sm text-green-600">
-                <Zap className="w-4 h-4" />
+              <div className="flex items-center space-x-1 text-xs text-green-600">
+                <Zap className="w-3 h-3" />
                 <span>Voice detected</span>
               </div>
             )}
@@ -196,25 +190,21 @@ export default function EnhancedRecorder({
         </div>
 
         {/* Recording Controls */}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center py-2">
           <Button
             onClick={recording ? stopRecording : handleStartRecording}
             size="lg"
             variant={buttonState.variant}
             disabled={buttonState.disabled}
-            className={`px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg font-medium transition-all duration-200 ${
-              recording 
-                ? 'hover:bg-red-600 shadow-lg shadow-red-200' 
-                : 'hover:shadow-lg shadow-blue-200 bg-gradient-to-r from-blue-500 to-indigo-600 border-0'
-            }`}
+            className="px-8 py-6 text-lg font-medium"
           >
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               {transcribing ? (
-                <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : recording ? (
-                <Square className="w-6 h-6" />
+                <Square className="w-5 h-5" />
               ) : (
-                <Mic className="w-6 h-6" />
+                <Mic className="w-5 h-5" />
               )}
               <span>{buttonState.text}</span>
             </div>
@@ -222,44 +212,44 @@ export default function EnhancedRecorder({
         </div>
 
         {/* Status Indicators */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className={`text-center p-4 rounded-xl transition-all duration-200 ${
+        <div className="grid grid-cols-3 gap-3">
+          <div className={`text-center p-3 rounded-md transition-colors ${
             recording 
-              ? 'bg-red-50 border-red-200 text-red-800 border' 
-              : 'bg-gray-50 border-gray-200 text-gray-600 border'
+              ? 'bg-destructive/10 text-destructive border border-destructive/20' 
+              : 'bg-muted/30 text-muted-foreground'
           }`}>
-            <div className="font-semibold">Recording</div>
-            <div className="text-sm opacity-75">{recording ? 'Active' : 'Inactive'}</div>
+            <div className="font-medium text-sm">Recording</div>
+            <div className="text-xs">{recording ? 'Active' : 'Inactive'}</div>
           </div>
           
-          <div className={`text-center p-4 rounded-xl transition-all duration-200 ${
+          <div className={`text-center p-3 rounded-md transition-colors ${
             speaking 
-              ? 'bg-green-50 border-green-200 text-green-800 border' 
-              : 'bg-gray-50 border-gray-200 text-gray-600 border'
+              ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' 
+              : 'bg-muted/30 text-muted-foreground'
           }`}>
-            <div className="font-semibold">Voice</div>
-            <div className="text-sm opacity-75">{speaking ? 'Detected' : 'Silent'}</div>
+            <div className="font-medium text-sm">Voice</div>
+            <div className="text-xs">{speaking ? 'Detected' : 'Silent'}</div>
           </div>
           
-          <div className={`text-center p-4 rounded-xl transition-all duration-200 ${
+          <div className={`text-center p-3 rounded-md transition-colors ${
             transcribing 
-              ? 'bg-yellow-50 border-yellow-200 text-yellow-800 border' 
-              : 'bg-gray-50 border-gray-200 text-gray-600 border'
+              ? 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800' 
+              : 'bg-muted/30 text-muted-foreground'
           }`}>
-            <div className="font-semibold">Processing</div>
-            <div className="text-sm opacity-75">{transcribing ? 'Active' : 'Ready'}</div>
+            <div className="font-medium text-sm">Processing</div>
+            <div className="text-xs">{transcribing ? 'Active' : 'Ready'}</div>
           </div>
         </div>
 
         {/* Error Display */}
         {hookError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-5 h-5 text-red-500">⚠</div>
+          <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
+            <div className="flex items-start space-x-3">
+              <div className="text-destructive">⚠</div>
               <div>
-                <h3 className="text-red-800 font-medium">Audio Processing Error</h3>
-                <p className="text-red-700 text-sm mt-1">{hookError}</p>
-                <p className="text-red-600 text-xs mt-2">
+                <h3 className="text-destructive font-medium text-sm">Audio Processing Error</h3>
+                <p className="text-destructive/80 text-sm mt-1">{hookError}</p>
+                <p className="text-destructive/70 text-xs mt-2">
                   Please ensure microphone access is granted and try refreshing the page.
                 </p>
               </div>
