@@ -8,7 +8,7 @@ export async function transcribeElevenLabs(audioFile: File): Promise<Transcripti
   const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.ELEVENLABS_API_KEY}`,
+      'xi-api-key': process.env.ELEVENLABS_API_KEY!,
     },
     body: formData,
   })
