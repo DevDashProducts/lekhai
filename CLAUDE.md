@@ -21,6 +21,18 @@ Always run type checking and linting before committing changes:
 pnpm typecheck && pnpm lint
 ```
 
+### Database Setup
+The application uses PostgreSQL for data persistence. To set up the database:
+```bash
+# Start PostgreSQL with Docker
+./scripts/setup-db.sh
+
+# Or manually
+docker-compose up -d
+```
+
+Database connection details are in `.env.local`. See `DATABASE_SETUP.md` for full setup instructions.
+
 ## Architecture Overview
 
 ### Framework & Technology Stack

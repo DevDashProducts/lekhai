@@ -1,9 +1,11 @@
 'use client'
 import { useState, useCallback } from 'react'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, History } from 'lucide-react'
 import { Provider } from '@/types'
 import EnhancedRecorder from './EnhancedRecorder'
 import StreamingTranscriptDisplay from './StreamingTranscriptDisplay'
+import TranscriptHistory from './TranscriptHistory'
+import { Button } from './ui/button'
 
 interface SpeechToTextProps {
   password: string
@@ -15,6 +17,7 @@ export default function SpeechToText({ password }: SpeechToTextProps) {
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [globalError] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
 
   const handleTranscriptUpdate = useCallback((transcript: any) => {
     setCurrentTranscript(transcript)
@@ -43,9 +46,20 @@ export default function SpeechToText({ password }: SpeechToTextProps) {
         <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
           {/* Header */}
           <header className="text-center py-2 sm:py-4">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-2 sm:mb-4">
-              lekhAI
-            </h1>
+            <div className="flex items-center justify-center space-x-4 mb-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
+                lekhAI
+              </h1>
+              <Button
+                onClick={() => setShowHistory(!showHistory)}
+                variant="outline"
+                size="sm"
+                className="bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-gray-50"
+              >
+                <History className="w-4 h-4 mr-2" />
+                {showHistory ? 'Hide History' : 'View History'}
+              </Button>
+            </div>
             <p className="text-lg sm:text-xl text-gray-700 mb-2">
               Real-time AI-powered speech transcription
             </p>
@@ -73,29 +87,38 @@ export default function SpeechToText({ password }: SpeechToTextProps) {
           )}
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8 max-w-7xl mx-auto">
-            {/* Recording Interface */}
-            <div className="space-y-6">
-              <EnhancedRecorder
-                provider={provider}
-                onProviderChange={setProvider}
-                password={password}
-                onTranscriptUpdate={handleTranscriptUpdate}
-                onRecordingStateChange={handleRecordingStateChange}
-                onTranscribingStateChange={handleTranscribingStateChange}
-              />
-            </div>
+          {!showHistory ? (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8 max-w-7xl mx-auto">
+              {/* Recording Interface */}
+              <div className="space-y-6">
+                <EnhancedRecorder
+                  provider={provider}
+                  onProviderChange={setProvider}
+                  password={password}
+                  onTranscriptUpdate={handleTranscriptUpdate}
+                  onRecordingStateChange={handleRecordingStateChange}
+                  onTranscribingStateChange={handleTranscribingStateChange}
+                />
+              </div>
 
-            {/* Transcript Display */}
-            <div className="space-y-6">
-              <StreamingTranscriptDisplay
-                transcript={currentTranscript || { text: '' }}
-                provider={provider}
-                isTranscribing={isTranscribing}
-                isRecording={isRecording}
+              {/* Transcript Display */}
+              <div className="space-y-6">
+                <StreamingTranscriptDisplay
+                  transcript={currentTranscript || { text: '' }}
+                  provider={provider}
+                  isTranscribing={isTranscribing}
+                  isRecording={isRecording}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="max-w-7xl mx-auto">
+              <TranscriptHistory 
+                password={password}
+                className="w-full"
               />
             </div>
-          </div>
+          )}
 
           {/* Footer */}
           <footer className="text-center py-8">
