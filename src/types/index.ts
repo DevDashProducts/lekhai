@@ -2,8 +2,17 @@ export type Provider = 'openai' | 'elevenlabs' | 'gemini'
 
 export interface TranscriptionResponse {
   text: string
-  confidence?: number
   duration?: number
+  confidence?: number
+}
+
+export interface TranscriptEntry {
+  id: string
+  text: string
+  provider: Provider
+  timestamp: Date
+  duration?: number
+  confidence?: number
 }
 
 export interface ProviderConfig {
