@@ -65,8 +65,9 @@ export async function POST(
       
       // If no session found, create a new one
       if (!sessionId) {
+        const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined
         const newSession = await createSession({
-          ip_address: request.ip || request.headers.get('x-forwarded-for') || undefined,
+          ip_address: ip,
           user_agent: request.headers.get('user-agent') || undefined
         })
         sessionId = newSession.id
@@ -106,9 +107,9 @@ export async function POST(
         mime_type: audioFile.type,
         transcript_text: result.text,
         confidence_score: result.confidence,
-        language_detected: result.language || 'en',
+        language_detected: (result as any).language || 'en',
         processing_time_ms: processingTime,
-        provider_response_raw: result.raw || null
+        provider_response_raw: (result as any).raw || null
       })
 
       // Update session statistics

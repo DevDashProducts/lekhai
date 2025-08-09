@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const allTestsPassed = Object.values(results.tests).every(test => 
-      typeof test === 'boolean' ? test : test.success
+    const allTestsPassed = Object.values(results.tests as Record<string, any>).every((test: any) => 
+      typeof test === 'boolean' ? test : !!test?.success
     )
 
     return NextResponse.json({

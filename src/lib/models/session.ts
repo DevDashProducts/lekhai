@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, getCurrentDbType } from '@/lib/db'
 import { v4 as uuidv4 } from 'uuid'
 
 export interface Session {
@@ -23,24 +23,55 @@ export interface CreateSessionData {
 export async function createSession(data: CreateSessionData = {}): Promise<Session> {
   const id = uuidv4()
   const sessionToken = uuidv4()
+  const dbType = getCurrentDbType()
   
-  const sql = `
-    INSERT INTO sessions (
-      id, user_id, session_token, ip_address, user_agent
-    ) VALUES ($1, $2, $3, $4, $5)
-    RETURNING *
-  `
-  
-  const values = [
-    id,
-    data.user_id || '00000000-0000-0000-0000-000000000000', // Default demo user
-    sessionToken,
-    data.ip_address || null,
-    data.user_agent || null
-  ]
-  
-  const result = await query<Session>(sql, values)
-  return result.rows[0]
+  if (dbType === 'json') {
+    // Direct JSON operation
+    const { jsonQuery } = await import('@/lib/db-json')
+    
+    const sessionData = {
+      id,
+      user_id: data.user_id || '00000000-0000-0000-0000-000000000000',
+      session_token: sessionToken,
+      ip_address: data.ip_address || null,
+      user_agent: data.user_agent || null,
+      started_at: new Date().toISOString(),
+      ended_at: null,
+      total_recordings: 0,
+      total_duration_seconds: 0
+    }
+    
+    const result = jsonQuery<Session>('sessions', 'insert', sessionData)
+    return result.rows[0]
+  } else {
+    // SQL-based operation (PostgreSQL or converted)
+    const sql = `
+      INSERT INTO sessions (
+        id, user_id, session_token, ip_address, user_agent
+      ) VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `
+    
+    const values = [
+      id,
+      data.user_id || '00000000-0000-0000-0000-000000000000',
+      sessionToken,
+      data.ip_address || null,
+      data.user_agent || null
+    ]
+    
+    const result = await query<Session>(sql, values)
+    return result.rows[0] || ({
+      id,
+      user_id: data.user_id || '00000000-0000-0000-0000-000000000000',
+      session_token: sessionToken,
+      ip_address: data.ip_address || null,
+      user_agent: data.user_agent || null,
+      started_at: new Date(),
+      total_recordings: 0,
+      total_duration_seconds: 0
+    } as unknown as Session)
+  }
 }
 
 // Get session by token
