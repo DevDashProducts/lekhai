@@ -5,8 +5,7 @@ import { transcribeGemini } from '@/lib/providers/gemini'
 import { getAuthFromHeaders } from '@/lib/auth'
 import { validateApiKey } from '@/lib/utils'
 import { Provider } from '@/types'
-import { createTranscript } from '@/lib/models/transcript'
-import { createSession, getSessionByToken, updateSessionStats } from '@/lib/models/session'
+// Server-side persistence disabled; keep imports removed
 
 export async function POST(
   request: NextRequest,
@@ -55,26 +54,7 @@ export async function POST(
     }
 
     // Get or create session for tracking
-    let sessionId: string | undefined
-    try {
-      const sessionToken = request.headers.get('x-session-token')
-      if (sessionToken) {
-        const existingSession = await getSessionByToken(sessionToken)
-        sessionId = existingSession?.id
-      }
-      
-      // If no session found, create a new one
-      if (!sessionId) {
-        const newSession = await createSession({
-          ip_address: request.ip || request.headers.get('x-forwarded-for') || undefined,
-          user_agent: request.headers.get('user-agent') || undefined
-        })
-        sessionId = newSession.id
-      }
-    } catch (dbError) {
-      // Don't fail the transcription if database is unavailable
-      console.warn('Database session error (continuing without persistence):', dbError)
-    }
+    const sessionId = undefined
 
     // Route to appropriate provider
     let result
@@ -95,32 +75,7 @@ export async function POST(
     // Calculate processing time
     const processingTime = Date.now() - startTime
 
-    // Save transcript to database (non-blocking)
-    try {
-      const transcript = await createTranscript({
-        session_id: sessionId,
-        provider,
-        original_filename: audioFile.name,
-        audio_duration_seconds: result.duration,
-        audio_size_bytes: audioFile.size,
-        mime_type: audioFile.type,
-        transcript_text: result.text,
-        confidence_score: result.confidence,
-        language_detected: result.language || 'en',
-        processing_time_ms: processingTime,
-        provider_response_raw: result.raw || null
-      })
-
-      // Update session statistics
-      if (sessionId) {
-        await updateSessionStats(sessionId, result.duration || 0)
-      }
-
-      console.log(`Transcript saved: ${transcript.id} (${provider}, ${processingTime}ms)`)
-    } catch (dbError) {
-      // Don't fail the API call if database save fails
-      console.error('Database save error (transcript still returned):', dbError)
-    }
+    // Persistence disabled; client stores transcripts in cookies
 
     return NextResponse.json({
       text: result.text,

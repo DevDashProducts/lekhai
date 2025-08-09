@@ -1,0 +1,184 @@
+{
+  "users": [
+    {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "email": "demo@lekhai.com",
+      "name": "Demo User",
+      "created_at": "2025-08-08T23:00:43.161Z",
+      "updated_at": "2025-08-08T23:00:43.161Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "45051780-1842-4ca7-8324-1336bc5bb92e",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "session_token": "2123755c-7941-4d65-9913-ed6fd0cb373d",
+      "ip_address": "::1",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "created_at": "2025-08-08T23:00:43.161Z",
+      "updated_at": "2025-08-08T23:00:44.165Z"
+    },
+    {
+      "id": "2bf7f120-7e0c-4857-9f2f-e29327c3d9a0",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "session_token": "c37a2769-cf74-410b-8509-432a476efbc4",
+      "ip_address": "::1",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "created_at": "2025-08-08T23:04:11.111Z",
+      "updated_at": "2025-08-08T23:04:22.210Z"
+    },
+    {
+      "id": "7832be92-84de-44f7-af50-374ec4adb58e",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "session_token": "5ce4b059-3d7a-48b9-9450-16f8bb8d133c",
+      "ip_address": "::1",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "created_at": "2025-08-08T23:08:12.117Z",
+      "updated_at": "2025-08-08T23:08:23.864Z"
+    },
+    {
+      "id": "4f80df49-b804-4177-95c8-54a26926f541",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "session_token": "a69f2bfd-3780-4bb1-8d8e-8367b152623f",
+      "ip_address": "::1",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "created_at": "2025-08-08T23:12:32.588Z",
+      "updated_at": "2025-08-08T23:12:33.801Z"
+    },
+    {
+      "id": "d545255f-a087-43d7-81c7-d45ff826d157",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "session_token": "4ce6c871-cdb0-468c-94c7-1c1871d5967b",
+      "ip_address": "::1",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "created_at": "2025-08-08T23:14:43.170Z",
+      "updated_at": "2025-08-08T23:14:50.900Z"
+    },
+    {
+      "id": "6cafce44-b130-4b20-b9f0-5c7b228248bd",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "session_token": "d8e43b41-7b62-4fe2-b9bc-8df2b7241d9a",
+      "ip_address": "::1",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "created_at": "2025-08-08T23:37:03.180Z",
+      "updated_at": "2025-08-08T23:37:07.898Z"
+    }
+  ],
+  "transcripts": [
+    {
+      "id": "9164d904-70fc-49b7-99c7-53c289e32db1",
+      "session_id": "45051780-1842-4ca7-8324-1336bc5bb92e",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "provider": "elevenlabs",
+      "original_filename": "blob",
+      "audio_duration_seconds": null,
+      "audio_size_bytes": 48795,
+      "mime_type": "audio/webm;codecs=opus",
+      "transcript_text": "Hello? Hello. Mic testing. Mic testing. One, two, three.",
+      "confidence_score": null,
+      "language_detected": "en",
+      "processing_time_ms": 980,
+      "provider_response_raw": null,
+      "status": "completed",
+      "created_at": "2025-08-08T23:00:44.135Z",
+      "updated_at": "2025-08-08T23:00:44.135Z"
+    },
+    {
+      "id": "e902df01-8e89-4131-a552-b9575f71445b",
+      "session_id": "2bf7f120-7e0c-4857-9f2f-e29327c3d9a0",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "provider": "elevenlabs",
+      "original_filename": "blob",
+      "audio_duration_seconds": null,
+      "audio_size_bytes": 3290457,
+      "mime_type": "audio/webm;codecs=opus",
+      "transcript_text": "So there's a couple of things here that we have to be careful of. First is the engagement options, second is the deliverable for each option, and third is the pricing. And I guess the fourth is timeline. Let's start with the engagement options. So realistically, I am thinking, how can Steve engage with us? First, is he a good person to go after or not? Second, if yes, um, how can we really help him? And here one thing I've noticed is that he only has one technical person and his time is limited, so he needs to ramp up his MVP production fast. So what he really needs is someone to bridge the gap between his vision and the, the technical realities. He, you know, we are that applied AI research lab, and what I can give him is X amount of hours with our CTO and where he just has one-on-one technical calls with him and we just, uh, you know, he just, we just answer any question he might have and we... And the final end product would be deliverables like, um, like, uh, C4 diagrams, like, um, user flow diagrams, um, and all other like, you know, diagrams a typical product manager or a, or... Like, what, what, like, like a properly done PRD it would be the deliverable. Now, why are we charging for that? Because it's going to take time, um, and we're also gonna give him best practices and advice on what we've seen works and what we've seen not works. We're going to give him, like, more details into, okay, this is how you should set up as AWS systems and whatnot, um, and we're gonna work, you know, directly with his PSD guy. So we're augmenting him in place of replacing this, uh, team. That is one aspect. Second aspect is, um... Frankly, I don't know if there's any other way, you know, we can engage with him other than, like, going directly into development, which I kind of don't want to do because the scope is not clear. So we have to work to clear out the scope initially and then just charge, you know, uh, per week development cost. So there's two ways, right? So one is, like, you know, just meetings, you know, bundled together, like 10 hours of meetings with, you know, u- of meetings with, uh, 10 hours of consulting with my, uh, with the CTO, uh Tilak Joshi, like, you know, who's a, a, who's an AWS certified ML engineer, blah, blah, blah. And then, um, and then, you know, other parts of the work and then the other would be, you know what, if you don't want to do that consulting, you can just do directly deploy our team, um, and y- you give the requirements and we just make it, though we don't r- recommend that part. So that is the, um, first part. The second is, what are the deliverables?",
+      "confidence_score": null,
+      "language_detected": "en",
+      "processing_time_ms": 11066,
+      "provider_response_raw": null,
+      "status": "completed",
+      "created_at": "2025-08-08T23:04:22.175Z",
+      "updated_at": "2025-08-08T23:04:22.176Z"
+    },
+    {
+      "id": "5742e5a8-ac26-44c2-a4b4-ec19a96af166",
+      "session_id": "7832be92-84de-44f7-af50-374ec4adb58e",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "provider": "elevenlabs",
+      "original_filename": "blob",
+      "audio_duration_seconds": null,
+      "audio_size_bytes": 3554192,
+      "mime_type": "audio/webm;codecs=opus",
+      "transcript_text": "The deliverables are a more interesting thing to... Um, so, definitely for the- the first part is really working with him to give a clear, get a clearer understanding of his vision and translate that into actual technical requirements that he can use, that his, you know, team, his technical person can use, and, um, that he can now go and hire either more developers or work with other people. Basically, get him over that hump of, you know, going from his vision to a mock-up of some sort, um, uh, you know. And this is similar to what we have done previously for our client, where he had this vision, and I can send you- this is the Project Apollo, where he had this vision of creating an amazing, um, stuff, but then he, you know, amazing, um, um, consulting, um, AI consultant, power consultant company by the... He needed someone to work with him- with him to go through what the mock-ups could look like and whatnot. What the final output could look like, uh, basically, you know, hand, you know, translate his vision into, uh, something that people can see, and on the other hand, you know, um, it was something that people can understand from a technical side. I can provide you- I'll provide you more information on that and what the- what we did for him. But that's the main idea there. Um, then the third part is budget. Now, his... The initial scoping and whatnot where he will get a lot of details is 2,500, um, and I'll send you- you can read the email we sent, um, Bryan that actually worked for him and he agreed, um, and, um, sort of go from there. Um, and the budget for that is definitely, like, 2,500 which comes with, uh, 15 hours of consult- like, 20 hours of consulting, you know? Um, something like that. Or I think it's more like 10 to 15 hours of consulting and, uh, five hours of meeting, 10 hours of actual work or something like- something like that. So, 2,500, great deal, or it- it can even be a quick $2,000 per week, like, 10 hours, $2,000 a week deal. Something like that. Um, I would like it to be 2,500, else I would not want to waste time on this. If you cannot pay 2,500 for initial consulting, it's just a bad client to go after. Um, and then on the MVP side, um, you know, h- he- we can say, \"Hey, you know, this is something that can cost at least 30 to 40,000 to build and then this cost can go all the way up to like, you know, 70 to 80,000.\" Um, that's a good fair estimate range. Um, it really depends on what the scope of the MVP is, which, you know, I would love to give you more information, but it's not clear. Like, you have a vision but you don't have a scope. The timeline, tell him it takes about three months to build an MVP and rigorously test it before we'd be comfortable putting our stamp, our name on it. Um, so, that's like th- f- forty- 30 to 40,000 spread over three months or it co- or it comes down to, like, 2,500 a- a week, um, right? Like, that's- that's 2,000 to 2,500 a week is the, uh, range. So, that's what's on my mind. Um, I have attached a lot of other information as well. Um, use that to, um, come up with, um... You know, process all this information and then ask me questions if you have any.",
+      "confidence_score": null,
+      "language_detected": "en",
+      "processing_time_ms": 11709,
+      "provider_response_raw": null,
+      "status": "completed",
+      "created_at": "2025-08-08T23:08:23.833Z",
+      "updated_at": "2025-08-08T23:08:23.833Z"
+    },
+    {
+      "id": "687b8122-c877-408c-9b53-3c07a0cd6021",
+      "session_id": "4f80df49-b804-4177-95c8-54a26926f541",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "provider": "elevenlabs",
+      "original_filename": "blob",
+      "audio_duration_seconds": null,
+      "audio_size_bytes": 316043,
+      "mime_type": "audio/webm;codecs=opus",
+      "transcript_text": "This is good. Uh, let's just add option one only. We're not gonna say option two. That is because I don't want him to sound like I'm selling. Actually, actually...",
+      "confidence_score": null,
+      "language_detected": "en",
+      "processing_time_ms": 1185,
+      "provider_response_raw": null,
+      "status": "completed",
+      "created_at": "2025-08-08T23:12:33.762Z",
+      "updated_at": "2025-08-08T23:12:33.762Z"
+    },
+    {
+      "id": "d98d17fe-b695-4a6f-b7d4-8415b742295d",
+      "session_id": "d545255f-a087-43d7-81c7-d45ff826d157",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "provider": "elevenlabs",
+      "original_filename": "blob",
+      "audio_duration_seconds": null,
+      "audio_size_bytes": 2063603,
+      "mime_type": "audio/webm;codecs=opus",
+      "transcript_text": "These two options are great. It follows the... this general structure that's agreed upon. What we can do is use the Project Apollo and the brand stuff that I sent you earlier, use that to give him an outline of what option one would include. So we'll say, \"Hey, Steve, your next, our recommended next option is to do, you know, basically option one, which is technical architecture.\" It includes all of this, a lot of going in details as it is in the LOE, uh, about what the deliverable for that would be, um, pricing it at $2,500. And then, um, naturally say, \"The other option is to work with us and develop, you know, go, go head on and start developing the MVP. This takes a lot longer, about two, three months, and upwards of $30,000, $40,000.\" So when you have like, oh, $40,000 versus $2,500, he's definitely gonna lean towards the $2,500 and a couple of weeks and see the quality of our work prior to engaging with us on a full MVP deployment partnership. That's the idea. That's why I've given you all that information. So now draft this reply part, you know, second half of the reply where we're saying, \"Hey, Steve. This is our recommended option going forward. This is the cost. This is the timeline. This is what we'll do, and this is the list of deliverables you'll get as coded from the LOE.\" Why? And then there should be why, you know, a section, why you recommend this, because, uh, as you can see from the client's email, r- we've given very nice, um, you know, nice wording there. Use that wording and then say, \"Hey, Steve. This is why you need it.\" Um...",
+      "confidence_score": null,
+      "language_detected": "en",
+      "processing_time_ms": 7696,
+      "provider_response_raw": null,
+      "status": "completed",
+      "created_at": "2025-08-08T23:14:50.866Z",
+      "updated_at": "2025-08-08T23:14:50.866Z"
+    },
+    {
+      "id": "4086c59f-7790-43c6-995f-9d2a357454fa",
+      "session_id": "6cafce44-b130-4b20-b9f0-5c7b228248bd",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "provider": "elevenlabs",
+      "original_filename": "blob",
+      "audio_duration_seconds": null,
+      "audio_size_bytes": 1314919,
+      "mime_type": "audio/webm;codecs=opus",
+      "transcript_text": "You have two very successful pitches we've done in the past. You have seen what works. First, extract knowledge based on what works in them. Differentiate us. Don't position us as a Div shop. Then strategically think how we can respond to Steve, while at the same time making sure that we answer his questions, give him solid things to look at, solid people to talk to, that is the references, a tool that he can play around with, which is Atlantis, and then our technical one-pager as well. And then give him the options to engage, which are, in this case, the option one of technical consulting to help him scope his stuff better and have that detailed scope as we just mentioned, and then the second part is MVP development, which is similar to what we proposed for Mark where I go in as a product lead and we work together and develop the product together. That very similar to what Mark, we did for Mark.",
+      "confidence_score": null,
+      "language_detected": "en",
+      "processing_time_ms": 4687,
+      "provider_response_raw": null,
+      "status": "completed",
+      "created_at": "2025-08-08T23:37:07.870Z",
+      "updated_at": "2025-08-08T23:37:07.870Z"
+    }
+  ],
+  "transcript_words": [],
+  "usage_events": [],
+  "metadata": {
+    "version": "1.0.0",
+    "created_at": "2025-08-08T23:00:43.161Z",
+    "last_updated": "2025-08-08T23:37:07.898Z"
+  }
+}

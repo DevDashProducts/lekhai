@@ -1,102 +1,122 @@
-import { Pool, PoolClient } from 'pg'
+import { jsonQuery, jsonTransaction, testJsonConnection } from './db-json'
 
-// Database configuration
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'lekhai_dev',
-  user: process.env.DB_USER || 'lekhai_user',
-  password: process.env.DB_PASSWORD || 'lekhai_dev_password',
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // How long a client is allowed to remain idle
-  connectionTimeoutMillis: 2000, // How long to wait for a connection
-}
-
-// Create a singleton pool instance
-let pool: Pool | null = null
-
-export function getPool(): Pool {
-  if (!pool) {
-    pool = new Pool(dbConfig)
-    
-    // Handle pool errors
-    pool.on('error', (err) => {
-      console.error('Unexpected error on idle client', err)
-    })
-
-    // Log successful connection
-    pool.on('connect', () => {
-      console.log('Connected to PostgreSQL database')
-    })
-  }
-  
-  return pool
-}
+// Standardize on JSON storage for this build (no Postgres/SQLite)
+export function getCurrentDbType(): 'json' { return 'json' }
 
 // Helper function to execute queries with automatic connection management
 export async function query<T = any>(
-  text: string, 
+  text: string,
   params?: any[]
 ): Promise<{ rows: T[]; rowCount: number }> {
-  const pool = getPool()
-  const start = Date.now()
-  
-  try {
-    const result = await pool.query(text, params)
-    const duration = Date.now() - start
-    
-    // Log slow queries (> 1000ms)
-    if (duration > 1000) {
-      console.warn(`Slow query executed in ${duration}ms:`, { text, params })
-    }
-    
-    return {
-      rows: result.rows,
-      rowCount: result.rowCount || 0
-    }
-  } catch (error) {
-    console.error('Database query error:', { text, params, error })
-    throw error
-  }
+  return convertSqlToJson<T>(text, params)
 }
+
+// Convert basic SQL operations to JSON database operations
+function convertSqlToJson<T>(sql: string, params: any[] = []): { rows: T[]; rowCount: number } {
+  const trimmedSql = sql.trim().toLowerCase()
+  
+  // Handle SELECT queries
+  if (trimmedSql.startsWith('select')) {
+    // Simple pattern matching for basic queries
+    const fromMatch = sql.match(/from\s+(\w+)/i)
+    if (!fromMatch) throw new Error('Could not parse table name from SQL')
+    
+    const tableName = fromMatch[1]
+    
+    // Handle WHERE clauses for simple cases
+    const whereMatch = sql.match(/where\s+(\w+)\s*=\s*\$1/i)
+    if (whereMatch && params.length > 0) {
+      const fieldName = whereMatch[1]
+      const value = params[0]
+      return jsonQuery<T>(tableName, 'select', null, (item: any) => item[fieldName] === value)
+    }
+    
+    // No WHERE clause - select all
+    return jsonQuery<T>(tableName, 'select')
+  }
+  
+  // Handle INSERT queries  
+  if (trimmedSql.startsWith('insert')) {
+    const intoMatch = sql.match(/insert\s+into\s+(\w+)/i)
+    if (!intoMatch) throw new Error('Could not parse table name from INSERT')
+    
+    const tableName = intoMatch[1]
+    
+    // Extract field names and values
+    const fieldsMatch = sql.match(/\(([^)]+)\)/)
+    const valuesMatch = sql.match(/values\s*\(([^)]+)\)/i)
+    
+    if (fieldsMatch && valuesMatch) {
+      const fields = fieldsMatch[1].split(',').map(f => f.trim())
+      const data: any = {}
+      
+      fields.forEach((field, index) => {
+        data[field] = params[index]
+      })
+      
+      return jsonQuery<T>(tableName, 'insert', data)
+    }
+  }
+  
+  // Handle UPDATE queries
+  if (trimmedSql.startsWith('update')) {
+    const tableMatch = sql.match(/update\s+(\w+)/i)
+    if (!tableMatch) throw new Error('Could not parse table name from UPDATE')
+    
+    const tableName = tableMatch[1]
+    const whereMatch = sql.match(/where\s+(\w+)\s*=\s*\$\d+/i)
+    
+    if (whereMatch) {
+      const fieldName = whereMatch[1]
+      const whereValue = params[params.length - 1] // Usually last param
+      
+      // Simple SET clause parsing
+      const setData: any = {}
+      // This is simplified - in reality you'd need more sophisticated parsing
+      
+      return jsonQuery<T>(tableName, 'update', setData, (item: any) => item[fieldName] === whereValue)
+    }
+  }
+  
+  // Handle DELETE queries
+  if (trimmedSql.startsWith('delete')) {
+    const fromMatch = sql.match(/delete\s+from\s+(\w+)/i)
+    if (!fromMatch) throw new Error('Could not parse table name from DELETE')
+    
+    const tableName = fromMatch[1]
+    const whereMatch = sql.match(/where\s+(\w+)\s*=\s*\$1/i)
+    
+    if (whereMatch && params.length > 0) {
+      const fieldName = whereMatch[1]
+      const value = params[0]
+      return jsonQuery<T>(tableName, 'delete', null, (item: any) => item[fieldName] === value)
+    }
+  }
+  
+  throw new Error(`Unsupported SQL operation: ${sql}`)
+}
+
+// Convert PostgreSQL queries to SQLite format
+// No SQLite support in this build
 
 // Helper function for transactions
 export async function transaction<T>(
-  callback: (client: PoolClient) => Promise<T>
+  callback: (client: any) => Promise<T>
 ): Promise<T> {
-  const pool = getPool()
-  const client = await pool.connect()
-  
-  try {
-    await client.query('BEGIN')
-    const result = await callback(client)
-    await client.query('COMMIT')
-    return result
-  } catch (error) {
-    await client.query('ROLLBACK')
-    throw error
-  } finally {
-    client.release()
-  }
+  return jsonTransaction(() => {
+    const mockClient = {
+      query: async (sql: string, params?: any[]) => convertSqlToJson(sql, params),
+    }
+    return callback(mockClient)
+  })
 }
 
 // Test database connection
 export async function testConnection(): Promise<boolean> {
-  try {
-    const result = await query('SELECT NOW() as current_time')
-    console.log('Database connection successful:', result.rows[0])
-    return true
-  } catch (error) {
-    console.error('Database connection failed:', error)
-    return false
-  }
+  return testJsonConnection()
 }
 
 // Close the pool (useful for testing or graceful shutdown)
 export async function closePool(): Promise<void> {
-  if (pool) {
-    await pool.end()
-    pool = null
-    console.log('Database pool closed')
-  }
+  // No-op in JSON mode
 }

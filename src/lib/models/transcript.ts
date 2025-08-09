@@ -1,4 +1,4 @@
-import { query, transaction } from '@/lib/db'
+import { query, transaction, getCurrentDbType } from '@/lib/db'
 import { v4 as uuidv4 } from 'uuid'
 
 // Types based on our database schema
@@ -52,36 +52,82 @@ export interface TranscriptWord {
 // Create a new transcript
 export async function createTranscript(data: CreateTranscriptData): Promise<Transcript> {
   const id = uuidv4()
+  const dbType = getCurrentDbType()
   
-  const sql = `
-    INSERT INTO transcripts (
-      id, session_id, user_id, provider, original_filename, 
-      audio_duration_seconds, audio_size_bytes, mime_type, 
-      transcript_text, confidence_score, language_detected,
-      processing_time_ms, provider_response_raw, status
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-    RETURNING *
-  `
-  
-  const values = [
-    id,
-    data.session_id || null,
-    data.user_id || '00000000-0000-0000-0000-000000000000', // Default demo user
-    data.provider,
-    data.original_filename || null,
-    data.audio_duration_seconds || null,
-    data.audio_size_bytes || null,
-    data.mime_type || null,
-    data.transcript_text,
-    data.confidence_score || null,
-    data.language_detected || null,
-    data.processing_time_ms || null,
-    data.provider_response_raw ? JSON.stringify(data.provider_response_raw) : null,
-    'completed'
-  ]
-  
-  const result = await query<Transcript>(sql, values)
-  return result.rows[0]
+  if (dbType === 'json') {
+    // Direct JSON operation
+    const { jsonQuery } = await import('@/lib/db-json')
+    
+    const transcriptData = {
+      id,
+      session_id: data.session_id || null,
+      user_id: data.user_id || '00000000-0000-0000-0000-000000000000',
+      provider: data.provider,
+      original_filename: data.original_filename || null,
+      audio_duration_seconds: data.audio_duration_seconds || null,
+      audio_size_bytes: data.audio_size_bytes || null,
+      mime_type: data.mime_type || null,
+      transcript_text: data.transcript_text,
+      confidence_score: data.confidence_score || null,
+      language_detected: data.language_detected || null,
+      status: 'completed' as TranscriptStatus,
+      processing_time_ms: data.processing_time_ms || null,
+      provider_response_raw: data.provider_response_raw || null,
+      created_at: new Date(),
+      updated_at: new Date()
+    }
+    
+    const result = jsonQuery<Transcript>('transcripts', 'insert', transcriptData)
+    return result.rows[0]
+  } else {
+    // SQL-based operation (PostgreSQL or converted)
+    const sql = `
+      INSERT INTO transcripts (
+        id, session_id, user_id, provider, original_filename, 
+        audio_duration_seconds, audio_size_bytes, mime_type, 
+        transcript_text, confidence_score, language_detected,
+        processing_time_ms, provider_response_raw, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      RETURNING *
+    `
+    
+    const values = [
+      id,
+      data.session_id || null,
+      data.user_id || '00000000-0000-0000-0000-000000000000',
+      data.provider,
+      data.original_filename || null,
+      data.audio_duration_seconds || null,
+      data.audio_size_bytes || null,
+      data.mime_type || null,
+      data.transcript_text,
+      data.confidence_score || null,
+      data.language_detected || null,
+      data.processing_time_ms || null,
+      data.provider_response_raw ? JSON.stringify(data.provider_response_raw) : null,
+      'completed'
+    ]
+    
+    const result = await query<Transcript>(sql, values)
+    return result.rows[0] || {
+      id,
+      session_id: data.session_id || null,
+      user_id: data.user_id || '00000000-0000-0000-0000-000000000000',
+      provider: data.provider,
+      original_filename: data.original_filename || null,
+      audio_duration_seconds: data.audio_duration_seconds || null,
+      audio_size_bytes: data.audio_size_bytes || null,
+      mime_type: data.mime_type || null,
+      transcript_text: data.transcript_text,
+      confidence_score: data.confidence_score || null,
+      language_detected: data.language_detected || null,
+      status: 'completed' as TranscriptStatus,
+      processing_time_ms: data.processing_time_ms || null,
+      provider_response_raw: data.provider_response_raw || null,
+      created_at: new Date(),
+      updated_at: new Date()
+    } as Transcript
+  }
 }
 
 // Get transcript by ID
@@ -116,15 +162,26 @@ export async function getRecentTranscripts(limit: number = 50): Promise<Transcri
 
 // Search transcripts by text content
 export async function searchTranscripts(searchTerm: string, limit: number = 20): Promise<Transcript[]> {
-  const sql = `
-    SELECT * FROM transcripts 
-    WHERE transcript_text ILIKE $1 
-    AND status = 'completed'
-    ORDER BY created_at DESC 
-    LIMIT $2
-  `
-  const result = await query<Transcript>(sql, [`%${searchTerm}%`, limit])
-  return result.rows
+  const dbType = getCurrentDbType()
+  
+  if (dbType === 'json') {
+    const { searchInTable } = await import('@/lib/db-json')
+    const results = searchInTable<Transcript>('transcripts', ['transcript_text'], searchTerm)
+    return results
+      .filter(t => t.status === 'completed')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, limit)
+  } else {
+    const sql = `
+      SELECT * FROM transcripts 
+      WHERE transcript_text ILIKE $1 
+      AND status = 'completed'
+      ORDER BY created_at DESC 
+      LIMIT $2
+    `
+    const result = await query<Transcript>(sql, [`%${searchTerm}%`, limit])
+    return result.rows
+  }
 }
 
 // Update transcript status

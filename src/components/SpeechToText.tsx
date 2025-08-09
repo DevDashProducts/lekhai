@@ -33,30 +33,19 @@ export default function SpeechToText({ password }: SpeechToTextProps) {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="p-4 max-w-7xl mx-auto">
-        {/* Header */}
-        <header className="text-center py-6 border-b border-border mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex-1"></div>
-            <h1 className="text-3xl font-bold text-primary">lekhAI</h1>
-            <div className="flex-1 flex justify-end space-x-2">
-              <ThemeToggle />
-              <Button
-                onClick={() => setShowHistory(!showHistory)}
-                variant="outline"
-                size="sm"
-              >
-                <History className="w-4 h-4 mr-2" />
-                {showHistory ? 'Hide History' : 'View History'}
-              </Button>
-            </div>
-          </div>
-          <p className="text-muted-foreground">Real-time AI-powered speech transcription</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            <em>lekh</em> (लेख) - Nepali for "writing"
-          </p>
-        </header>
+    <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-background">
+      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+        {/* Local toolbar */}
+        <div className="flex items-center justify-end mb-4">
+          <Button
+            onClick={() => setShowHistory(!showHistory)}
+            variant="outline"
+            size="sm"
+          >
+            <History className="w-4 h-4 mr-2" />
+            {showHistory ? 'Hide History' : 'View History'}
+          </Button>
+        </div>
 
         {/* Error Display */}
         {globalError && (

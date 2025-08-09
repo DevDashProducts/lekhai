@@ -17,46 +17,69 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="bg-card border border-border rounded-lg shadow-lg p-8 w-full max-w-sm">
-          <div className="text-center mb-8">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 715 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">lekhAI</h1>
-            <p className="text-sm text-muted-foreground">AI-powered speech transcription</p>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Demo Access
-              </label>
-              <input
-                type="password"
-                placeholder="Enter demo password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
-                className="w-full px-3 py-2 bg-background text-foreground border border-border rounded-md focus:ring-2 focus:ring-ring focus:border-transparent"
-              />
-            </div>
-            <Button 
-              onClick={handleAuth}
-              className="w-full"
-              size="default"
-            >
-              Access lekhAI
-            </Button>
-          </div>
-          
-          <div className="text-center mt-6">
-            <p className="text-xs text-muted-foreground">Built by DevDash Labs</p>
+      <section className="relative overflow-hidden">
+        {/* background grid */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-sys-color-surface),transparent_60%)] opacity-70" />
+          <div className="absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent)]">
+            <svg className="w-full h-full opacity-30" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                  <path d="M 32 0 L 0 0 0 32" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-sys-color-outline" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
           </div>
         </div>
-      </div>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="space-y-6 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 rounded-none border border-border bg-sys-color-surface px-2.5 py-1 text-xs text-sys-color-text-secondary">
+                <span className="h-1.5 w-1.5 bg-sys-color-primary" />
+                Real-time AI transcription
+              </div>
+              <h1 className="heading-1 tracking-tight">
+                Transform your voice into precise, searchable text
+              </h1>
+              <p className="paragraph text-sys-color-text-secondary max-w-xl mx-auto lg:mx-0">
+                lekhAI supports OpenAI Whisper, Google Gemini, and ElevenLabs. Stream speech to text with low latency and modern, accessible UI.
+              </p>
+            </div>
+
+            <div className="bg-card border border-border rounded-none shadow-sm p-6 sm:p-8 w-full max-w-lg mx-auto">
+              <div className="mb-6">
+                <h2 className="heading-3">Access</h2>
+                <p className="subtle text-sys-color-text-secondary">Enter demo password to continue</p>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Demo Password</label>
+                  <input
+                    type="password"
+                    placeholder="Enter demo password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
+                    className="block w-full rounded-none border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                  />
+                </div>
+                <Button 
+                  onClick={handleAuth}
+                  className="w-full rounded-none"
+                  size="default"
+                >
+                  Access lekhAI
+                </Button>
+              </div>
+              <div className="mt-6 text-center">
+                <p className="text-xs text-muted-foreground">Built by DevDash Labs</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     )
   }
 
