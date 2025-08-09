@@ -2,7 +2,7 @@
 import { useWhisper } from '@cloudraker/use-whisper'
 import { Provider, TranscriptEntry } from '@/types'
 import { useState, useEffect, useRef } from 'react'
-import { Copy, Check, Download, Trash2 } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { Button } from './ui/button'
 
 interface TranscriptDisplayProps {
@@ -17,7 +17,7 @@ export default function TranscriptDisplay({
   isTranscribing,
 }: TranscriptDisplayProps) {
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([])
-  const [copied, setCopied] = useState(false)
+  // const [copied] = useState(false) // Removed - not currently used
   const [autoScroll, setAutoScroll] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -63,7 +63,7 @@ export default function TranscriptDisplay({
         return prev
       })
     }
-  }, [transcript.text, provider, (transcript as any).duration, (transcript as any).confidence])
+  }, [transcript, provider])
 
   // Auto-scroll to bottom when new content is added
   useEffect(() => {
@@ -75,37 +75,37 @@ export default function TranscriptDisplay({
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      // Could show a toast notification here in the future
     } catch (error) {
       console.error('Failed to copy:', error)
     }
   }
 
-  const copyAllTranscripts = async () => {
-    const allText = transcripts.map(t => t.text).join('\n\n')
-    await copyToClipboard(allText)
-  }
+  // These functions are available but not currently used in the UI
+  // const copyAllTranscripts = async () => {
+  //   const allText = transcripts.map(t => t.text).join('\n\n')
+  //   await copyToClipboard(allText)
+  // }
 
-  const downloadTranscripts = () => {
-    const allText = transcripts.map(t => 
-      `[${t.timestamp.toLocaleTimeString()}] ${t.text}`
-    ).join('\n\n')
-    const blob = new Blob([allText], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `transcript-${new Date().toISOString().split('T')[0]}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+  // const downloadTranscripts = () => {
+  //   const allText = transcripts.map(t => 
+  //     `[${t.timestamp.toLocaleTimeString()}] ${t.text}`
+  //   ).join('\n\n')
+  //   const blob = new Blob([allText], { type: 'text/plain' })
+  //   const url = URL.createObjectURL(blob)
+  //   const a = document.createElement('a')
+  //   a.href = url
+  //   a.download = `transcript-${new Date().toISOString().split('T')[0]}.txt`
+  //   document.body.appendChild(a)
+  //   a.click()
+  //   document.body.removeChild(a)
+  //   URL.revokeObjectURL(url)
+  // }
 
-  const clearTranscripts = () => {
-    setTranscripts([])
-    sessionStorage.removeItem('lekhai-transcripts')
-  }
+  // const clearTranscripts = () => {
+  //   setTranscripts([])
+  //   sessionStorage.removeItem('lekhai-transcripts')
+  // }
 
   const formatTimestamp = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -141,7 +141,7 @@ export default function TranscriptDisplay({
       >
         {transcripts.length > 0 ? (
           <div className="space-y-4">
-            {transcripts.map((entry, index) => (
+            {transcripts.map((entry) => (
               <div key={entry.id} className="bg-white rounded-lg p-3 border border-gray-200">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">

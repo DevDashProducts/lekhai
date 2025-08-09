@@ -1,10 +1,11 @@
 'use client'
-import { useState } from 'react'
-import { Mic, MicOff, Settings, Loader2, AlertCircle } from 'lucide-react'
-import { useWhisperSafe } from '@/hooks/useWhisperSafe'
+import { useState, useCallback } from 'react'
+import { AlertCircle, History } from 'lucide-react'
 import { Provider } from '@/types'
-import ProviderSelector from './ProviderSelector'
-import TranscriptDisplay from './TranscriptDisplay'
+import EnhancedRecorder from './EnhancedRecorder'
+import StreamingTranscriptDisplay from './StreamingTranscriptDisplay'
+import TranscriptHistory from './TranscriptHistory'
+import ThemeToggle from './ThemeToggle'
 import { Button } from './ui/button'
 
 interface SpeechToTextProps {
@@ -12,168 +13,96 @@ interface SpeechToTextProps {
 }
 
 export default function SpeechToText({ password }: SpeechToTextProps) {
-  const [provider, setProvider] = useState<Provider>('openai')
+  const [provider, setProvider] = useState<Provider>('elevenlabs')
+  const [currentTranscript, setCurrentTranscript] = useState<any>(null)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [globalError] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
 
-  const {
-    recording,
-    speaking,
-    transcribing,
-    transcript,
-    startRecording,
-    stopRecording,
-    isReady,
-    error: hookError,
-  } = useWhisperSafe({
-    whisperApiEndpoints: {
-      transcriptions: `/api/transcribe/${provider}`,
-      translations: `/api/transcribe/${provider}`,
-    },
-    streaming: true,
-    timeSlice: 1000,
-    autoTranscribe: true,
-    removeSilence: true,
-    nonStop: true,
-    stopTimeout: 5000,
-    onTranscribe: async (blob: Blob) => {
-      const formData = new FormData()
-      formData.append('file', blob)
-      
-      const response = await fetch(`/api/transcribe/${provider}`, {
-        method: 'POST',
-        headers: {
-          'x-password': password,
-        },
-        body: formData,
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Transcription failed')
-      }
-      
-      const data = await response.json()
-      return { blob, text: data.text }
-    },
-  })
+  const handleTranscriptUpdate = useCallback((transcript: any) => {
+    setCurrentTranscript(transcript)
+  }, [])
+
+  const handleRecordingStateChange = useCallback((recording: boolean) => {
+    setIsRecording(recording)
+  }, [])
+
+  const handleTranscribingStateChange = useCallback((transcribing: boolean) => {
+    setIsTranscribing(transcribing)
+  }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <header className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            lekhAI
-          </h1>
-          <p className="text-gray-600">
-            Transform your voice into written words with AI
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            <em>lekh</em> (लेख) - Nepali for "writing"
-          </p>
-        </header>
-
-        {/* Error Display */}
-        {hookError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="text-red-500 flex-shrink-0" size={20} />
-              <div>
-                <h3 className="text-red-800 font-medium">Audio Processing Error</h3>
-                <p className="text-red-700 text-sm mt-1">{hookError}</p>
-                <p className="text-red-600 text-xs mt-2">
-                  Try refreshing the page. If the problem persists, ensure you're using HTTPS and a modern browser.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {!isReady && !hookError && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <Loader2 className="text-blue-500 animate-spin flex-shrink-0" size={20} />
-              <div>
-                <h3 className="text-blue-800 font-medium">Initializing Audio Processing</h3>
-                <p className="text-blue-700 text-sm mt-1">Please wait while we set up the audio recording system...</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Controls */}
-        <div className="bg-white rounded-xl shadow-lg p-6 space-y-6">
-          {/* Provider Selection */}
-          <div className="flex items-center gap-4">
-            <Settings className="text-gray-500" size={20} />
-            <div className="flex-1">
-              <ProviderSelector
-                selectedProvider={provider}
-                onProviderChange={setProvider}
-                disabled={recording || !isReady}
-              />
-            </div>
-          </div>
-
-          {/* Recording Button */}
-          <div className="text-center">
-            <Button
-              onClick={recording ? stopRecording : startRecording}
-              size="lg"
-              variant={recording ? "destructive" : "default"}
-              disabled={!isReady || !!hookError}
-              className={`inline-flex items-center gap-3 px-8 py-6 text-lg font-medium transition-all ${
-                recording ? 'animate-pulse' : ''
-              }`}
-            >
-              {transcribing ? (
-                <Loader2 size={24} className="animate-spin" />
-              ) : recording ? (
-                <MicOff size={24} />
-              ) : (
-                <Mic size={24} />
-              )}
-              {!isReady 
-                ? 'Initializing...'
-                : transcribing 
-                ? 'Processing...' 
-                : recording 
-                ? 'Stop Recording' 
-                : 'Start Recording'
-              }
-            </Button>
-          </div>
-
-          {/* Status Indicators */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className={`text-center p-3 rounded-lg transition-colors ${
-              recording ? 'bg-red-100 text-red-800' : 'bg-gray-100'
-            }`}>
-              <div className="font-medium">Recording</div>
-              <div className="text-sm">{recording ? 'Active' : 'Inactive'}</div>
-            </div>
-            <div className={`text-center p-3 rounded-lg transition-colors ${
-              speaking ? 'bg-green-100 text-green-800' : 'bg-gray-100'
-            }`}>
-              <div className="font-medium">Speaking</div>
-              <div className="text-sm">{speaking ? 'Detected' : 'Silent'}</div>
-            </div>
-            <div className={`text-center p-3 rounded-lg transition-colors ${
-              transcribing ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100'
-            }`}>
-              <div className="font-medium">Processing</div>
-              <div className="text-sm">{transcribing ? 'Transcribing' : 'Ready'}</div>
-            </div>
-          </div>
+    <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-background">
+      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+        {/* Local toolbar */}
+        <div className="flex items-center justify-end mb-4">
+          <Button
+            onClick={() => setShowHistory(!showHistory)}
+            variant="outline"
+            size="sm"
+          >
+            <History className="w-4 h-4 mr-2" />
+            {showHistory ? 'Hide History' : 'View History'}
+          </Button>
         </div>
 
-        {/* Transcript Display */}
-        <TranscriptDisplay
-          transcript={transcript}
-          provider={provider}
-          isTranscribing={transcribing}
-        />
+        {/* Error Display */}
+        {globalError && (
+          <div className="max-w-4xl mx-auto mb-6">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="text-destructive flex-shrink-0" size={20} />
+                <div>
+                  <h3 className="text-destructive font-medium">System Error</h3>
+                  <p className="text-destructive/80 text-sm mt-1">{globalError}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        {!showHistory ? (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-7xl mx-auto">
+            <EnhancedRecorder
+              provider={provider}
+              onProviderChange={setProvider}
+              password={password}
+              onTranscriptUpdate={handleTranscriptUpdate}
+              onRecordingStateChange={handleRecordingStateChange}
+              onTranscribingStateChange={handleTranscribingStateChange}
+            />
+            <StreamingTranscriptDisplay
+              transcript={currentTranscript || { text: '' }}
+              provider={provider}
+              isTranscribing={isTranscribing}
+              isRecording={isRecording}
+            />
+          </div>
+        ) : (
+          <div className="max-w-7xl mx-auto">
+            <TranscriptHistory 
+              password={password}
+              className="w-full"
+            />
+          </div>
+        )}
+
+        {/* Footer */}
+        <footer className="text-center py-8 border-t border-border mt-8">
+          <p className="text-sm text-muted-foreground">
+            Built by <span className="text-primary font-medium">DevDash Labs</span>
+          </p>
+          <div className="flex items-center justify-center space-x-4 text-xs text-muted-foreground mt-2">
+            <span>OpenAI Whisper</span>
+            <span>•</span>
+            <span>ElevenLabs</span>
+            <span>•</span>
+            <span>Google Gemini</span>
+          </div>
+        </footer>
       </div>
     </div>
   )
-} 
+}

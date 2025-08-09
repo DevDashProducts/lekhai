@@ -5,12 +5,15 @@ import { transcribeGemini } from '@/lib/providers/gemini'
 import { getAuthFromHeaders } from '@/lib/auth'
 import { validateApiKey } from '@/lib/utils'
 import { Provider } from '@/types'
+// Server-side persistence disabled; keep imports removed
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ provider: string }> }
 ) {
   try {
+    const startTime = Date.now()
+    
     // Await the params in Next.js 15
     const { provider: providerParam } = await params
     
@@ -50,6 +53,9 @@ export async function POST(
       )
     }
 
+    // Get or create session for tracking
+    const sessionId = undefined
+
     // Route to appropriate provider
     let result
     switch (provider) {
@@ -66,11 +72,18 @@ export async function POST(
         throw new Error(`Unsupported provider: ${provider}`)
     }
 
+    // Calculate processing time
+    const processingTime = Date.now() - startTime
+
+    // Persistence disabled; client stores transcripts in cookies
+
     return NextResponse.json({
       text: result.text,
       provider,
       duration: result.duration,
       confidence: result.confidence,
+      session_id: sessionId,
+      processing_time_ms: processingTime
     })
 
   } catch (error) {

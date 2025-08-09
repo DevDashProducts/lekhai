@@ -1,5 +1,6 @@
 'use client'
 import { Provider, ProviderConfig } from '@/types'
+import { Select } from '@/components/ui/select'
 
 const PROVIDERS: Record<Provider, ProviderConfig> = {
   openai: {
@@ -37,15 +38,15 @@ export default function ProviderSelector({
   disabled = false,
 }: ProviderSelectorProps) {
   return (
-    <div className="flex flex-col space-y-2">
-      <label className="text-sm font-medium text-gray-700">
+    <div className="flex flex-col space-y-2 w-full max-w-full">
+      <label className="text-sm font-medium text-foreground">
         AI Provider
       </label>
-      <select
+      <Select
         value={selectedProvider}
         onChange={(e) => onProviderChange(e.target.value as Provider)}
         disabled={disabled}
-        className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bg-sys-color-surface-container-low"
       >
         {Object.values(PROVIDERS).map((provider) => (
           <option
@@ -56,8 +57,8 @@ export default function ProviderSelector({
             {provider.displayName} - {provider.description}
           </option>
         ))}
-      </select>
-      <p className="text-xs text-gray-500">
+      </Select>
+      <p className="text-xs text-muted-foreground">
         Model: {PROVIDERS[selectedProvider].models[0]}
       </p>
     </div>
