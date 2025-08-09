@@ -256,7 +256,7 @@ export async function addTranscriptWords(
     await client.query('DELETE FROM transcript_words WHERE transcript_id = $1', [transcriptId])
     
     // Then insert new words
-    const values = words.map((word, index) => [
+    const values = words.map((word) => [
       uuidv4(),
       transcriptId,
       word.word,

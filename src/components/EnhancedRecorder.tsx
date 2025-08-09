@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Square, Settings, Zap, Clock } from 'lucide-react'
+import { Mic, Square, Zap, Clock } from 'lucide-react'
 import { useWhisperSafe } from '@/hooks/useWhisperSafe'
 import { Provider } from '@/types'
 import SimpleWaveformVisualizer from './SimpleWaveformVisualizer'

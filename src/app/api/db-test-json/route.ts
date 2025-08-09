@@ -4,7 +4,7 @@ import { getJsonInfo } from '@/lib/db-json'
 import { createSession } from '@/lib/models/session'
 import { createTranscript } from '@/lib/models/transcript'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get current database type
     const dbType = getCurrentDbType()

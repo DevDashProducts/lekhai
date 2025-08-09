@@ -7,6 +7,21 @@ import { validateApiKey } from '@/lib/utils'
 import { Provider } from '@/types'
 // Server-side persistence disabled; keep imports removed
 
+// Basic per-IP rate limiting (in-memory, best-effort for demo)
+const RATE_LIMIT_WINDOW_MS = 60_000
+const RATE_LIMIT_MAX_REQUESTS = 20
+const ipToRequests: Map<string, number[]> = new Map()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const windowStart = now - RATE_LIMIT_WINDOW_MS
+  const history = ipToRequests.get(ip) || []
+  const recent = history.filter((t) => t > windowStart)
+  recent.push(now)
+  ipToRequests.set(ip, recent)
+  return recent.length > RATE_LIMIT_MAX_REQUESTS
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ provider: string }> }
@@ -22,6 +37,15 @@ export async function POST(
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      )
+    }
+
+    // Rate limit by IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again shortly.' },
+        { status: 429 }
       )
     }
 
@@ -53,6 +77,24 @@ export async function POST(
       )
     }
 
+    // Validate file type and size
+    const MAX_BYTES = 15 * 1024 * 1024 // 15MB
+    const contentType = audioFile.type || ''
+    const isAudio = contentType.startsWith('audio/')
+    const isWebmVideo = contentType === 'video/webm' // some browsers label mic blobs this way
+    if (!isAudio && !isWebmVideo) {
+      return NextResponse.json(
+        { error: `Invalid file type: ${contentType || 'unknown'}` },
+        { status: 415 }
+      )
+    }
+    if (typeof audioFile.size === 'number' && audioFile.size > MAX_BYTES) {
+      return NextResponse.json(
+        { error: 'File too large. Maximum allowed size is 15MB.' },
+        { status: 413 }
+      )
+    }
+
     // Get or create session for tracking
     const sessionId = undefined
 
@@ -75,7 +117,7 @@ export async function POST(
     // Calculate processing time
     const processingTime = Date.now() - startTime
 
-    // Persistence disabled; client stores transcripts in cookies
+    // Persistence disabled; client stores transcripts locally (cookies/IndexedDB)
 
     return NextResponse.json({
       text: result.text,

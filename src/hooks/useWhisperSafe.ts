@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 interface UseWhisperSafeConfig {
   whisperApiEndpoints: {
@@ -34,7 +34,9 @@ export function useWhisperSafe(config: UseWhisperSafeConfig): UseWhisperSafeRetu
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([])
+  const chunksRef = useRef<Blob[]>([])
+  const lastTranscribeAtRef = useRef<number>(0)
+  const transcribeInProgressRef = useRef<boolean>(false)
 
   // Initialize without FFmpeg
   useEffect(() => {
@@ -83,17 +85,38 @@ export function useWhisperSafe(config: UseWhisperSafeConfig): UseWhisperSafeRetu
           : 'audio/webm'
       })
 
-      const chunks: Blob[] = []
+      chunksRef.current = []
 
-      recorder.ondataavailable = (event) => {
+      recorder.ondataavailable = async (event) => {
         if (event.data.size > 0) {
-          chunks.push(event.data)
+          chunksRef.current.push(event.data)
           setSpeaking(event.data.size > 1000) // Simple voice activity detection
+          // Incremental transcription: throttle calls while recording
+          if (config.onTranscribe) {
+            const now = Date.now()
+            const minInterval = Math.max(2000, (config.timeSlice || 1000) * 2)
+            if (!transcribeInProgressRef.current && now - lastTranscribeAtRef.current >= minInterval) {
+              try {
+                transcribeInProgressRef.current = true
+                setTranscribing(true)
+                const blob = new Blob(chunksRef.current, { type: recorder.mimeType })
+                const result = await config.onTranscribe(blob)
+                setTranscript({ text: result.text })
+                lastTranscribeAtRef.current = now
+              } catch (err) {
+                console.error('Incremental transcription failed:', err)
+                setError(err instanceof Error ? err.message : 'Transcription failed')
+              } finally {
+                transcribeInProgressRef.current = false
+                setTranscribing(false)
+              }
+            }
+          }
         }
       }
 
       recorder.onstop = async () => {
-        const audioBlob = new Blob(chunks, { type: recorder.mimeType })
+        const audioBlob = new Blob(chunksRef.current, { type: recorder.mimeType })
         
         if (audioBlob.size > 0 && config.onTranscribe) {
           try {
@@ -113,8 +136,9 @@ export function useWhisperSafe(config: UseWhisperSafeConfig): UseWhisperSafeRetu
       }
 
       setMediaRecorder(recorder)
-      setAudioChunks(chunks)
-      
+      lastTranscribeAtRef.current = 0
+      transcribeInProgressRef.current = false
+
       // Start recording
       recorder.start(config.timeSlice || 1000)
       setRecording(true)
