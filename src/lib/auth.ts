@@ -1,7 +1,9 @@
 import { AuthContext } from '@/types'
+import { getValidatedEnv } from '@/lib/env'
 
 export function checkAuth(password: string): boolean {
-  return password === process.env.SIMPLE_PASSWORD
+  const env = getValidatedEnv()
+  return password === env.SIMPLE_PASSWORD
 }
 
 export function getAuthFromHeaders(headers: Headers): boolean {

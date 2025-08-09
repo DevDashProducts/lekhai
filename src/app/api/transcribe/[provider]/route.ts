@@ -5,6 +5,7 @@ import { transcribeGemini } from '@/lib/providers/gemini'
 import { getAuthFromHeaders } from '@/lib/auth'
 import { validateApiKey } from '@/lib/utils'
 import { Provider } from '@/types'
+import { errorResponse } from '@/lib/errors'
 // Server-side persistence disabled; keep imports removed
 
 // Basic per-IP rate limiting (in-memory, best-effort for demo)
@@ -34,47 +35,32 @@ export async function POST(
     
     // Check authentication
     if (!getAuthFromHeaders(request.headers)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return errorResponse({ error_code: 'UNAUTHORIZED', message: 'Unauthorized' }, 401)
     }
 
     // Rate limit by IP
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     if (isRateLimited(ip)) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again shortly.' },
-        { status: 429 }
-      )
+      return errorResponse({ error_code: 'RATE_LIMITED', message: 'Too many requests. Please try again shortly.' }, 429)
     }
 
     const provider = providerParam.toLowerCase() as Provider
     
     // Validate provider
     if (!['openai', 'elevenlabs', 'gemini'].includes(provider)) {
-      return NextResponse.json(
-        { error: `Unsupported provider: ${provider}` },
-        { status: 400 }
-      )
+      return errorResponse({ error_code: 'UNSUPPORTED_PROVIDER', message: `Unsupported provider: ${provider}` }, 400)
     }
 
     // Check if API key is available for provider
     if (!validateApiKey(provider)) {
-      return NextResponse.json(
-        { error: `API key not configured for ${provider}` },
-        { status: 400 }
-      )
+      return errorResponse({ error_code: 'BAD_REQUEST', message: `API key not configured for ${provider}` }, 400)
     }
 
     const formData = await request.formData()
     const audioFile = formData.get('file') as File
 
     if (!audioFile) {
-      return NextResponse.json(
-        { error: 'No audio file provided' },
-        { status: 400 }
-      )
+      return errorResponse({ error_code: 'BAD_REQUEST', message: 'No audio file provided' }, 400)
     }
 
     // Validate file type and size
@@ -83,16 +69,10 @@ export async function POST(
     const isAudio = contentType.startsWith('audio/')
     const isWebmVideo = contentType === 'video/webm' // some browsers label mic blobs this way
     if (!isAudio && !isWebmVideo) {
-      return NextResponse.json(
-        { error: `Invalid file type: ${contentType || 'unknown'}` },
-        { status: 415 }
-      )
+      return errorResponse({ error_code: 'INVALID_FILE_TYPE', message: `Invalid file type: ${contentType || 'unknown'}` }, 415)
     }
     if (typeof audioFile.size === 'number' && audioFile.size > MAX_BYTES) {
-      return NextResponse.json(
-        { error: 'File too large. Maximum allowed size is 15MB.' },
-        { status: 413 }
-      )
+      return errorResponse({ error_code: 'FILE_TOO_LARGE', message: 'File too large. Maximum allowed size is 15MB.' }, 413)
     }
 
     // Get or create session for tracking
@@ -130,12 +110,6 @@ export async function POST(
 
   } catch (error) {
     console.error('Transcription error:', error)
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Transcription failed',
-        provider: (await params).provider 
-      },
-      { status: 500 }
-    )
+    return errorResponse({ error_code: 'INTERNAL_ERROR', message: error instanceof Error ? error.message : 'Transcription failed' }, 500)
   }
 } 
