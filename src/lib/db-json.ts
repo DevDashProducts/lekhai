@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import { join, dirname } from 'path'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'fs'
+import { dirname } from 'path'
 import { v4 as uuidv4 } from 'uuid'
 
 // JSON database configuration
@@ -206,8 +206,6 @@ export function getJsonInfo(): {
   recordCounts: Record<string, number>
 } {
   const database = getJsonDb()
-  const { statSync } = require('fs')
-  
   // Get file size
   const stats = existsSync(DB_PATH) ? statSync(DB_PATH) : { size: 0 }
   

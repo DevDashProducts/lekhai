@@ -37,6 +37,12 @@ export default function ProviderSelector({
   onProviderChange,
   disabled = false,
 }: ProviderSelectorProps) {
+  const envVarByProvider: Record<Provider, string> = {
+    openai: 'OPENAI_API_KEY',
+    elevenlabs: 'ELEVENLABS_API_KEY',
+    gemini: 'GEMINI_API_KEY',
+  }
+
   return (
     <div className="flex flex-col space-y-2 w-full max-w-full">
       <label className="text-sm font-medium text-foreground">
@@ -55,12 +61,20 @@ export default function ProviderSelector({
             disabled={!provider.isAvailable}
           >
             {provider.displayName} - {provider.description}
+            {!provider.isAvailable ? ` (configure ${envVarByProvider[provider.name as Provider]})` : ''}
           </option>
         ))}
       </Select>
-      <p className="text-xs text-muted-foreground">
-        Model: {PROVIDERS[selectedProvider].models[0]}
-      </p>
+      <div className="space-y-1">
+        <p className="text-xs text-muted-foreground">
+          Model: {PROVIDERS[selectedProvider].models[0]}
+        </p>
+        {!PROVIDERS[selectedProvider].isAvailable && (
+          <p className="text-xs text-amber-600">
+            Provider disabled. Set {envVarByProvider[selectedProvider]} in your environment.
+          </p>
+        )}
+      </div>
     </div>
   )
 } 

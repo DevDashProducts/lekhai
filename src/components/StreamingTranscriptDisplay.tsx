@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Copy, Download, Edit3, Search, X, Check } from 'lucide-react'
 import { Provider, TranscriptEntry } from '@/types'
+import { addTranscript, getRecentTranscripts } from '@/lib/cache/transcripts-db'
 import { Button } from './ui/button'
 
 interface StreamingTranscriptDisplayProps {
@@ -15,7 +16,7 @@ export default function StreamingTranscriptDisplay({
   transcript,
   provider,
   isTranscribing,
-  isRecording
+  isRecording: _isRecording,
 }: StreamingTranscriptDisplayProps) {
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([])
   const [currentText, setCurrentText] = useState('')
@@ -28,50 +29,38 @@ export default function StreamingTranscriptDisplay({
   const scrollRef = useRef<HTMLDivElement>(null)
   const editInputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Cookie helpers
-  const getCookie = (name: string): string | null => {
-    if (typeof document === 'undefined') return null
-    const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
-    return match ? decodeURIComponent(match[1]) : null
-  }
-  const setCookie = (name: string, value: string, days = 30) => {
-    if (typeof document === 'undefined') return
-    const expires = new Date(Date.now() + days * 864e5).toUTCString()
-    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`
-  }
-
-  // Load transcripts from cookies
+  // Load transcripts from IndexedDB
   useEffect(() => {
-    const saved = getCookie('lekhai_transcripts')
-    if (saved) {
+    ;(async () => {
       try {
-        const parsed = JSON.parse(saved)
-        setTranscripts(parsed.map((t: any) => ({
-          ...t,
-          timestamp: new Date(t.timestamp)
+        const recent = await getRecentTranscripts(50)
+        setTranscripts(recent.map(r => ({
+          id: r.id,
+          text: r.text,
+          provider: r.provider,
+          timestamp: new Date(r.createdAt),
+          duration: r.duration,
+          confidence: r.confidence,
         })))
-      } catch (error) {
-        console.error('Failed to load transcripts from cookie:', error)
+      } catch {
+        // ignore
       }
-    }
+    })()
   }, [])
 
-  // Save transcripts to cookies (keep last 10, truncate text to fit ~4KB cookie budget)
+  // Persist to IndexedDB when a new transcript arrives
   useEffect(() => {
-    const compact = transcripts
-      .slice(0, 10)
-      .map(t => ({
-        ...t,
-        text: t.text.length > 800 ? t.text.slice(0, 800) + '…' : t.text,
-      }))
-    try {
-      setCookie('lekhai_transcripts', JSON.stringify(compact))
-    } catch (e) {
-      // If cookie too large, reduce list length
-      const smaller = compact.slice(0, 5)
-      try { setCookie('lekhai_transcripts', JSON.stringify(smaller)) } catch {}
+    if (!transcript?.text || !transcript.text.trim()) return
+    const record = {
+      id: Date.now().toString(),
+      provider,
+      text: transcript.text,
+      createdAt: Date.now(),
+      duration: transcript.duration,
+      confidence: transcript.confidence,
     }
-  }, [transcripts])
+    addTranscript(record).catch(() => {})
+  }, [transcript.text, transcript.duration, transcript.confidence, provider])
 
   // Handle transcript updates (both during and after recording)
   useEffect(() => {
@@ -174,9 +163,7 @@ export default function StreamingTranscriptDisplay({
   }
 
   const filteredTranscripts = searchTerm.trim()
-    ? transcripts.filter(t => 
-        t.text.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    ? transcripts.filter(t => t.text.toLowerCase().includes(searchTerm.toLowerCase()))
     : transcripts
 
   return (
