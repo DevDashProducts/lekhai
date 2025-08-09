@@ -42,7 +42,16 @@ export default function TranscriptHistory({ password, className = '' }: Transcri
       const saved = getCookie('lekhai_transcripts')
       if (saved) {
         const parsed = JSON.parse(saved)
-        setTranscripts(parsed)
+        const normalized: Transcript[] = parsed.map((t: any) => ({
+          id: t.id,
+          provider: t.provider,
+          transcript_text: t.text,
+          audio_duration_seconds: t.duration,
+          confidence_score: t.confidence,
+          created_at: typeof t.timestamp === 'string' ? t.timestamp : new Date(t.timestamp).toISOString(),
+          processing_time_ms: undefined,
+        }))
+        setTranscripts(normalized)
       }
     } catch (e) {
       // ignore
@@ -55,7 +64,16 @@ export default function TranscriptHistory({ password, className = '' }: Transcri
     try {
       const saved = getCookie('lekhai_transcripts')
       const parsed = saved ? JSON.parse(saved) : []
-      setTranscripts(parsed)
+      const normalized: Transcript[] = parsed.map((t: any) => ({
+        id: t.id,
+        provider: t.provider,
+        transcript_text: t.text,
+        audio_duration_seconds: t.duration,
+        confidence_score: t.confidence,
+        created_at: typeof t.timestamp === 'string' ? t.timestamp : new Date(t.timestamp).toISOString(),
+        processing_time_ms: undefined,
+      }))
+      setTranscripts(normalized)
     } catch (err) {
       setError('Failed to load transcripts from cookies')
     } finally {
@@ -69,7 +87,7 @@ export default function TranscriptHistory({ password, className = '' }: Transcri
     transcripts.forEach(t => { byProvider[t.provider] = (byProvider[t.provider] || 0) + 1 })
     setStats({
       total_transcripts: transcripts.length,
-      total_duration_hours: 0,
+      total_duration_hours: (transcripts.reduce((sum, t) => sum + (t.audio_duration_seconds || 0), 0)) / 3600,
       transcripts_by_provider: Object.entries(byProvider).map(([provider, count]) => ({ provider, count })),
       recent_activity: [],
     })
