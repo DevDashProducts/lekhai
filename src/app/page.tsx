@@ -55,16 +55,14 @@ export default function Home() {
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Demo Password
-                  </label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Demo Password</label>
                   <input
                     type="password"
                     placeholder="Enter demo password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
-                    className="w-full px-3 py-2 bg-background text-foreground border border-border rounded-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    className="block w-full rounded-none border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
                   />
                 </div>
                 <Button 
