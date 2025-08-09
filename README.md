@@ -1,176 +1,189 @@
-# lekhAI - AI-Powered Speech to Text
+# lekhAI — AI-Powered Speech to Text
 
-Transform your voice into written words with AI. lekhAI (*lekh* लेख - Nepali for "writing") supports multiple AI providers for real-time speech-to-text transcription.
+Transform your voice into written words with AI. lekhAI (lekh लेख — Nepali for "writing") supports multiple AI providers for low-latency speech-to-text with a modern UI.
 
 ## ✨ Features
 
-- 🎤 **Real-time Speech Recognition** - Live transcription as you speak
-- 🔄 **Multi-Provider Support** - OpenAI Whisper, ElevenLabs, Google Gemini
-- 🎨 **Beautiful UI** - Clean, modern interface built with Tailwind CSS
-- 🔒 **Simple Authentication** - Demo password protection (Phase 1)
-- ⚡ **Next.js 14** - Fast, modern React framework
-- 📱 **Responsive Design** - Works on desktop and mobile
-- 🔧 **TypeScript** - Full type safety throughout
+- **Real-time transcription**: Streamed speech capture and fast server-side transcription
+- **Multi-provider support**: OpenAI Whisper, ElevenLabs, Google Gemini (experimental)
+- **Modern UI**: Tailwind CSS v4 + shadcn/ui + Radix primitives
+- **Client-side history**: Recent transcripts stored locally (cookies) — no external DB required
+- **Simple demo auth**: Password-protected demo (Phase 1)
+- **Next.js 15 + React 19 + TypeScript**: App Router, strict TS
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+ and pnpm
-- At least one AI provider API key (OpenAI, ElevenLabs, or Gemini)
+- At least one provider API key (OpenAI, ElevenLabs, or Gemini)
 
-### Installation
+### Install & Run
 
-1. **Clone the repository:**
+1. Clone and install
    ```bash
    git clone https://github.com/devdashlabs/lekhai.git
    cd lekhai
-   ```
-
-2. **Install dependencies:**
-   ```bash
    pnpm install
    ```
 
-3. **Set up environment variables:**
+2. Create `.env.local` with your secrets (no example file is committed)
    ```bash
-   cp .env.example .env.local
-   ```
-   
-   Edit `.env.local` and add your API keys:
-   ```bash
-   # Add at least one API key
-   OPENAI_API_KEY=sk-proj-your-openai-key-here
-   ELEVENLABS_API_KEY=your-elevenlabs-key-here
-   GEMINI_API_KEY=your-gemini-key-here
-   
-   # Set a demo password
+   # Required for API access (used by the UI and APIs via x-password header)
    SIMPLE_PASSWORD=your-demo-password
+
+   # Optional but recommended — enable providers you want to use
+   OPENAI_API_KEY=sk-proj_your_openai_key
+   ELEVENLABS_API_KEY=your_elevenlabs_key
+   GEMINI_API_KEY=your_gemini_key
+
+   # Optional: JSON file path for local test storage (used by test endpoints)
+   JSON_DB_PATH=./data/lekhai.json
    ```
 
-4. **Start the development server:**
+3. Start the dev server
    ```bash
    pnpm dev
    ```
 
-5. **Open your browser:**
-   Visit [http://localhost:3000](http://localhost:3000)
+4. Open the app at http://localhost:3000
 
-## 🔑 API Keys Setup
+Notes
+- Microphone access requires a secure context. Browsers treat `http://localhost` as secure.
+- Provider availability in the UI is auto-detected from env at build-time.
 
-### OpenAI Whisper
-1. Sign up at [OpenAI](https://platform.openai.com/)
-2. Go to API Keys section
-3. Create a new API key
-4. Add to `.env.local` as `OPENAI_API_KEY`
+## 🔐 Authentication
 
-### ElevenLabs
-1. Sign up at [ElevenLabs](https://elevenlabs.io/)
-2. Go to Profile → API Keys
-3. Generate a new API key
-4. Add to `.env.local` as `ELEVENLABS_API_KEY`
+- The home page uses a simple client-side password gate.
+- All API routes require the header `x-password: <SIMPLE_PASSWORD>` and will return 401 without it.
+- This is for demo only. For production, implement real auth (e.g., NextAuth + Cognito).
 
-### Google Gemini
-1. Go to [Google AI Studio](https://aistudio.google.com/)
-2. Create a new API key
-3. Add to `.env.local` as `GEMINI_API_KEY`
+## 🎙️ Using lekhAI
 
-## 🏗️ Project Structure
+1. Enter the demo password
+2. Pick a provider (disabled if no API key is configured)
+3. Click Start Recording and speak naturally
+4. Stop to transcribe; transcripts appear in real-time
+5. View, search, copy, and download recent transcripts in History
+
+Behavior
+- Local history is stored in a cookie `lekhai_transcripts` (last ~10 items, text truncated to fit cookie limits).
+- Silence auto-stop: recording stops after ~3s of silence.
+
+## 🧩 Providers
+
+- **OpenAI Whisper**: model `whisper-1`
+- **ElevenLabs**: endpoint `v1/speech-to-text`, default `scribe_v1`
+- **Google Gemini (experimental)**: `gemini-1.5-flash:generateContent`
+
+Provider availability flags are set at build time:
+- `NEXT_PUBLIC_OPENAI_AVAILABLE`, `NEXT_PUBLIC_ELEVENLABS_AVAILABLE`, `NEXT_PUBLIC_GEMINI_AVAILABLE` are derived from whether corresponding API keys are present.
+
+## 🔌 API Endpoints
+
+All endpoints expect `x-password: <SIMPLE_PASSWORD>` unless noted.
+
+- `POST /api/transcribe/openai|elevenlabs|gemini`
+  - Form-data: `file` (audio blob)
+  - Returns: `{ text, provider, duration?, confidence?, processing_time_ms }`
+  - Example:
+    ```bash
+    curl -X POST \
+      -H "x-password: $SIMPLE_PASSWORD" \
+      -F file=@sample.webm \
+      http://localhost:3000/api/transcribe/openai
+    ```
+
+- `GET /api/transcripts` → 410 Gone (intentionally disabled; UI uses cookies for history)
+- `GET /api/transcripts/[id]` → Fetches a transcript from the local JSON store if present
+- `DELETE /api/transcripts/[id]` → Deletes a transcript from the local JSON store
+
+Diagnostics & tests
+- `GET /api/db-test` → Connectivity check (auth required)
+- `GET /api/db-test-json` → JSON store info and a quick insert test (no auth)
+- `GET /api/db-test-sqlite` → 410 Gone (SQLite disabled in this build)
+- `POST /api/test-db-models` → Exercises session/transcript model flows (auth required)
+
+## 🗂️ Data Storage
+
+- Primary storage: Browser cookies for recent transcripts (no external DB required).
+- A lightweight JSON file DB (`JSON_DB_PATH`, default `./data/lekhai.json`) backs test/diagnostic endpoints and model helpers. It's optional and created on demand.
+- A PostgreSQL setup guide exists for a future DB-backed version. See `DATABASE_SETUP.md`. In this build, transcripts API listing is disabled and the UI relies on cookies.
+
+## 🧱 Project Structure (high level)
 
 ```
 lekhai/
 ├── src/
-│   ├── app/                 # Next.js app router
-│   │   ├── api/transcribe/  # API routes for transcription
-│   │   ├── globals.css      # Global styles
-│   │   ├── layout.tsx       # Root layout
-│   │   └── page.tsx         # Home page
-│   ├── components/          # React components
-│   │   ├── ui/             # Reusable UI components
-│   │   ├── SpeechToText.tsx # Main transcription component
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── transcribe/[provider]/route.ts   # Transcription endpoints
+│   │   │   ├── transcripts/[id]/route.ts        # Per-transcript ops (JSON store)
+│   │   │   ├── transcripts/route.ts             # 410 Gone (disabled)
+│   │   │   ├── db-test/route.ts                 # Connectivity check
+│   │   │   ├── db-test-json/route.ts            # JSON DB diagnostics
+│   │   │   └── db-test-sqlite/route.ts          # 410 Gone
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── EnhancedRecorder.tsx
+│   │   ├── StreamingTranscriptDisplay.tsx
+│   │   ├── TranscriptHistory.tsx
 │   │   ├── ProviderSelector.tsx
-│   │   └── TranscriptDisplay.tsx
-│   ├── lib/                # Utilities and providers
-│   │   ├── providers/      # AI provider implementations
-│   │   ├── utils.ts        # Utility functions
-│   │   └── auth.ts         # Authentication helpers
-│   └── types/              # TypeScript type definitions
-├── public/                 # Static assets
-├── .env.example           # Environment variables template
-└── README.md              # Project documentation
+│   │   ├── layout/Header.tsx
+│   │   └── ui/button.tsx ...
+│   ├── lib/
+│   │   ├── providers/{openai,elevenlabs,gemini}.ts
+│   │   ├── db.ts / db-json.ts
+│   │   ├── models/{transcript,session}.ts
+│   │   ├── auth.ts
+│   │   └── utils.ts
+│   └── types/
+└── public/
 ```
 
 ## 🔧 Scripts
 
 ```bash
-pnpm dev        # Start development server
-pnpm build      # Build for production
-pnpm start      # Start production server
-pnpm lint       # Run ESLint
-pnpm type-check # Run TypeScript compiler check
+pnpm dev         # Start development server (Turbopack)
+pnpm build       # Build for production
+pnpm start       # Start production server
+pnpm lint        # Run ESLint
+pnpm lint:fix    # Fix lint issues
+pnpm type-check  # TypeScript checks
 ```
 
-## 🛠️ Technologies Used
+## 🛠️ Tech Stack
 
-- **Framework:** Next.js 14 with App Router
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **UI Components:** Custom components with class-variance-authority
-- **Speech-to-Text:** @cloudraker/use-whisper
-- **Icons:** Lucide React
-- **AI Providers:** OpenAI Whisper, ElevenLabs, Google Gemini
+- **Framework**: Next.js 15 (App Router) + React 19
+- **Language**: TypeScript (strict)
+- **UI**: Tailwind CSS v4, shadcn/ui, Radix UI, Lucide icons
+- **Audio**: MediaRecorder API, waveform visualizers
+- **Providers**: OpenAI Whisper, ElevenLabs, Google Gemini
 
-## 📖 Usage
+## 🧪 Troubleshooting
 
-1. **Access the Application:** Enter your demo password to access lekhAI
-2. **Select AI Provider:** Choose from OpenAI, ElevenLabs, or Gemini
-3. **Start Recording:** Click the microphone button to begin
-4. **Speak Naturally:** Your speech will be transcribed in real-time
-5. **Stop Recording:** Click the stop button when finished
-
-## 🔐 Authentication
-
-Phase 1 uses simple password authentication for demo purposes. The password is set in your `.env.local` file.
-
-**Production Note:** For production use, implement proper authentication (AWS Cognito integration is planned for Phase 2).
+- 401 Unauthorized from APIs → ensure `x-password` matches `SIMPLE_PASSWORD`.
+- Provider disabled in dropdown → missing API key at build time.
+- Mic not working → use Chrome/Safari on `http://localhost:3000` or HTTPS; allow mic permissions.
 
 ## 🌐 Deployment
 
-### Vercel (Recommended)
-1. Push your code to GitHub
-2. Connect your repository to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy automatically
-
-### AWS Amplify
-1. Connect your GitHub repository
-2. Configure build settings
-3. Add environment variables
-4. Deploy
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Recommended: Vercel
+1. Connect the repo
+2. Set env vars: `SIMPLE_PASSWORD`, any provider keys you need
+3. Deploy
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+Apache-2.0 — see [LICENSE](LICENSE).
 
 ## 🙏 Acknowledgments
 
-- [@cloudraker/use-whisper](https://github.com/chengsokdara/use-whisper) for the excellent React hook
-- [OpenAI](https://openai.com/) for Whisper API
-- [ElevenLabs](https://elevenlabs.io/) for speech-to-text services
-- [Google](https://ai.google.dev/) for Gemini API
+- [@cloudraker/use-whisper](https://github.com/chengsokdara/use-whisper)
+- [OpenAI](https://openai.com/) • [ElevenLabs](https://elevenlabs.io/) • [Google AI](https://ai.google.dev/)
 
-## 🏢 Built by DevDash Labs
+—
 
-**lekhAI** is developed by DevDash Labs - transforming ideas into digital solutions.
-
----
-
-*lekh (लेख) - Nepali word meaning "writing" or "to write"*
+lekh (लेख) — Nepali for "writing"

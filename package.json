@@ -40,6 +40,7 @@
     "@wavesurfer/react": "^1.0.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dexie": "^4.0.11",
     "lucide-react": "^0.294.0",
     "next": "15.3.4",
     "pg": "^8.16.3",
@@ -47,7 +48,8 @@
     "react-dom": "^19",
     "tailwind-merge": "^2.6.0",
     "uuid": "^11.1.0",
-    "wavesurfer.js": "^7.9.9"
+    "wavesurfer.js": "^7.9.9",
+    "zod": "^4.0.16"
   },
   "devDependencies": {
     "@babel/core": "^7.27.7",

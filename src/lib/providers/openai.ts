@@ -1,14 +1,8 @@
 import { TranscriptionResponse } from '@/types'
 
 export async function transcribeOpenAI(audioFile: File): Promise<TranscriptionResponse> {
-  // Convert audio to a supported format if needed
-  let processedFile = audioFile
-  
-  // If the file is webm, we need to convert it to a supported format
-  if (audioFile.type.includes('webm')) {
-    // Create a new file with mp3 extension for better compatibility
-    processedFile = new File([audioFile], 'audio.mp3', { type: 'audio/mp3' })
-  }
+  // Send the original file; Whisper API supports multiple audio formats (including WebM/Opus)
+  const processedFile = audioFile
 
   const formData = new FormData()
   formData.append('file', processedFile)

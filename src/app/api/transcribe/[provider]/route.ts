@@ -5,7 +5,23 @@ import { transcribeGemini } from '@/lib/providers/gemini'
 import { getAuthFromHeaders } from '@/lib/auth'
 import { validateApiKey } from '@/lib/utils'
 import { Provider } from '@/types'
+import { errorResponse } from '@/lib/errors'
 // Server-side persistence disabled; keep imports removed
+
+// Basic per-IP rate limiting (in-memory, best-effort for demo)
+const RATE_LIMIT_WINDOW_MS = 60_000
+const RATE_LIMIT_MAX_REQUESTS = 20
+const ipToRequests: Map<string, number[]> = new Map()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const windowStart = now - RATE_LIMIT_WINDOW_MS
+  const history = ipToRequests.get(ip) || []
+  const recent = history.filter((t) => t > windowStart)
+  recent.push(now)
+  ipToRequests.set(ip, recent)
+  return recent.length > RATE_LIMIT_MAX_REQUESTS
+}
 
 export async function POST(
   request: NextRequest,
@@ -19,38 +35,44 @@ export async function POST(
     
     // Check authentication
     if (!getAuthFromHeaders(request.headers)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return errorResponse({ error_code: 'UNAUTHORIZED', message: 'Unauthorized' }, 401)
+    }
+
+    // Rate limit by IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    if (isRateLimited(ip)) {
+      return errorResponse({ error_code: 'RATE_LIMITED', message: 'Too many requests. Please try again shortly.' }, 429)
     }
 
     const provider = providerParam.toLowerCase() as Provider
     
     // Validate provider
     if (!['openai', 'elevenlabs', 'gemini'].includes(provider)) {
-      return NextResponse.json(
-        { error: `Unsupported provider: ${provider}` },
-        { status: 400 }
-      )
+      return errorResponse({ error_code: 'UNSUPPORTED_PROVIDER', message: `Unsupported provider: ${provider}` }, 400)
     }
 
     // Check if API key is available for provider
     if (!validateApiKey(provider)) {
-      return NextResponse.json(
-        { error: `API key not configured for ${provider}` },
-        { status: 400 }
-      )
+      return errorResponse({ error_code: 'BAD_REQUEST', message: `API key not configured for ${provider}` }, 400)
     }
 
     const formData = await request.formData()
     const audioFile = formData.get('file') as File
 
     if (!audioFile) {
-      return NextResponse.json(
-        { error: 'No audio file provided' },
-        { status: 400 }
-      )
+      return errorResponse({ error_code: 'BAD_REQUEST', message: 'No audio file provided' }, 400)
+    }
+
+    // Validate file type and size
+    const MAX_BYTES = 15 * 1024 * 1024 // 15MB
+    const contentType = audioFile.type || ''
+    const isAudio = contentType.startsWith('audio/')
+    const isWebmVideo = contentType === 'video/webm' // some browsers label mic blobs this way
+    if (!isAudio && !isWebmVideo) {
+      return errorResponse({ error_code: 'INVALID_FILE_TYPE', message: `Invalid file type: ${contentType || 'unknown'}` }, 415)
+    }
+    if (typeof audioFile.size === 'number' && audioFile.size > MAX_BYTES) {
+      return errorResponse({ error_code: 'FILE_TOO_LARGE', message: 'File too large. Maximum allowed size is 15MB.' }, 413)
     }
 
     // Get or create session for tracking
@@ -75,7 +97,7 @@ export async function POST(
     // Calculate processing time
     const processingTime = Date.now() - startTime
 
-    // Persistence disabled; client stores transcripts in cookies
+    // Persistence disabled; client stores transcripts locally (cookies/IndexedDB)
 
     return NextResponse.json({
       text: result.text,
@@ -88,12 +110,6 @@ export async function POST(
 
   } catch (error) {
     console.error('Transcription error:', error)
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Transcription failed',
-        provider: (await params).provider 
-      },
-      { status: 500 }
-    )
+    return errorResponse({ error_code: 'INTERNAL_ERROR', message: error instanceof Error ? error.message : 'Transcription failed' }, 500)
   }
 } 

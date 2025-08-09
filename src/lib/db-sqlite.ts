@@ -11,8 +11,11 @@ let db: any | null = null
 export function getSqliteDb(): any {
   if (!db) {
     // Ensure data directory exists
-    const { mkdirSync } = require('fs')
-    const { dirname } = require('path')
+    // Use CommonJS style import for compatibility in this module
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { mkdirSync } = require('fs') as typeof import('fs')
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { dirname } = require('path') as typeof import('path')
     mkdirSync(dirname(DB_PATH), { recursive: true })
     
     // Initialize database
@@ -141,8 +144,9 @@ export function getSqliteInfo(): {
   size: number
   tables: string[]
 } {
-  const database = getSqliteDb()
-  const { statSync } = require('fs')
+  getSqliteDb()
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { statSync } = require('fs') as typeof import('fs')
   
   // Get file size
   const stats = statSync(DB_PATH)

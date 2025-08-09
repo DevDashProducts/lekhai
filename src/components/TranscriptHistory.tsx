@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { History, Search, Trash2, Download, Clock, Mic } from 'lucide-react'
 import { Button } from './ui/button'
 import { Provider } from '@/types'
+import { getRecentTranscripts, searchTranscripts, deleteTranscriptById } from '@/lib/cache/transcripts-db'
 
 interface Transcript {
   id: string
@@ -16,7 +17,7 @@ interface Transcript {
 
 interface TranscriptHistoryProps { password: string; className?: string }
 
-export default function TranscriptHistory({ password, className = '' }: TranscriptHistoryProps) {
+export default function TranscriptHistory({ password: _password, className = '' }: TranscriptHistoryProps) {
   const [transcripts, setTranscripts] = useState<Transcript[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,58 +25,38 @@ export default function TranscriptHistory({ password, className = '' }: Transcri
   const [isSearching, setIsSearching] = useState(false)
   const [stats, setStats] = useState<any>(null)
 
-  // Cookie helpers
-  const getCookie = (name: string): string | null => {
-    if (typeof document === 'undefined') return null
-    const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
-    return match ? decodeURIComponent(match[1]) : null
-  }
-  const setCookie = (name: string, value: string, days = 30) => {
-    if (typeof document === 'undefined') return
-    const expires = new Date(Date.now() + days * 864e5).toUTCString()
-    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`
-  }
-
-  // Load recent transcripts from cookies on mount
+  // Load recent transcripts from IndexedDB on mount
   useEffect(() => {
-    try {
-      const saved = getCookie('lekhai_transcripts')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        const normalized: Transcript[] = parsed.map((t: any) => ({
-          id: t.id,
-          provider: t.provider,
-          transcript_text: t.text,
-          audio_duration_seconds: t.duration,
-          confidence_score: t.confidence,
-          created_at: typeof t.timestamp === 'string' ? t.timestamp : new Date(t.timestamp).toISOString(),
-          processing_time_ms: undefined,
-        }))
-        setTranscripts(normalized)
-      }
-    } catch (e) {
-      // ignore
-    }
+    ;(async () => {
+      const recent = await getRecentTranscripts(50)
+      setTranscripts(recent.map(r => ({
+        id: r.id,
+        provider: r.provider,
+        transcript_text: r.text,
+        audio_duration_seconds: r.duration,
+        confidence_score: r.confidence,
+        created_at: new Date(r.createdAt).toISOString(),
+        processing_time_ms: undefined,
+      })))
+    })()
   }, [])
 
   const loadTranscripts = async () => {
     setLoading(true)
     setError(null)
     try {
-      const saved = getCookie('lekhai_transcripts')
-      const parsed = saved ? JSON.parse(saved) : []
-      const normalized: Transcript[] = parsed.map((t: any) => ({
-        id: t.id,
-        provider: t.provider,
-        transcript_text: t.text,
-        audio_duration_seconds: t.duration,
-        confidence_score: t.confidence,
-        created_at: typeof t.timestamp === 'string' ? t.timestamp : new Date(t.timestamp).toISOString(),
+      const recent = await getRecentTranscripts(50)
+      setTranscripts(recent.map(r => ({
+        id: r.id,
+        provider: r.provider,
+        transcript_text: r.text,
+        audio_duration_seconds: r.duration,
+        confidence_score: r.confidence,
+        created_at: new Date(r.createdAt).toISOString(),
         processing_time_ms: undefined,
-      }))
-      setTranscripts(normalized)
-    } catch (err) {
-      setError('Failed to load transcripts from cookies')
+      })))
+    } catch {
+      setError('Failed to load transcripts')
     } finally {
       setLoading(false)
     }
@@ -93,7 +74,7 @@ export default function TranscriptHistory({ password, className = '' }: Transcri
     })
   }
 
-  const searchTranscripts = async () => {
+  const searchTranscriptsLocal = async () => {
     if (!searchTerm.trim()) {
       loadTranscripts()
       return
@@ -101,8 +82,16 @@ export default function TranscriptHistory({ password, className = '' }: Transcri
     setIsSearching(true)
     setError(null)
     try {
-      const filtered = transcripts.filter(t => t.transcript_text.toLowerCase().includes(searchTerm.toLowerCase()))
-      setTranscripts(filtered)
+      const results = await searchTranscripts(searchTerm, 100)
+      setTranscripts(results.map(r => ({
+        id: r.id,
+        provider: r.provider,
+        transcript_text: r.text,
+        audio_duration_seconds: r.duration,
+        confidence_score: r.confidence,
+        created_at: new Date(r.createdAt).toISOString(),
+        processing_time_ms: undefined,
+      })))
     } finally {
       setIsSearching(false)
     }
@@ -110,9 +99,9 @@ export default function TranscriptHistory({ password, className = '' }: Transcri
 
   const deleteTranscript = async (id: string) => {
     if (!confirm('Are you sure you want to delete this transcript?')) return
+    await deleteTranscriptById(id)
     const updated = transcripts.filter(t => t.id !== id)
     setTranscripts(updated)
-    try { setCookie('lekhai_transcripts', JSON.stringify(updated)) } catch {}
     loadStats()
   }
 
@@ -188,17 +177,17 @@ ${transcript.transcript_text}`
         <div className="flex space-x-2">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search transcripts..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && searchTranscripts()}
-              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-none focus:ring-2 focus:ring-ring focus:border-transparent"
-            />
+              <input
+                type="text"
+                placeholder="Search transcripts..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && searchTranscriptsLocal()}
+                className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              />
           </div>
           <Button
-            onClick={searchTranscripts}
+            onClick={searchTranscriptsLocal}
             disabled={isSearching}
             variant="outline"
             size="sm"

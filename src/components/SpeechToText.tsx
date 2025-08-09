@@ -5,7 +5,7 @@ import { Provider } from '@/types'
 import EnhancedRecorder from './EnhancedRecorder'
 import StreamingTranscriptDisplay from './StreamingTranscriptDisplay'
 import TranscriptHistory from './TranscriptHistory'
-import ThemeToggle from './ThemeToggle'
+// import ThemeToggle from './ThemeToggle'
 import { Button } from './ui/button'
 
 interface SpeechToTextProps {
