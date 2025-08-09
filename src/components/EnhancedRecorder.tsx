@@ -131,12 +131,12 @@ export default function EnhancedRecorder({
   const buttonState = getRecordingButtonState()
 
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden w-full">
+    <div className="bg-card border border-border rounded-none overflow-hidden w-full">
       {/* Header */}
       <div className="bg-muted/50 px-4 py-4 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary rounded-none flex items-center justify-center">
               <Mic className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
@@ -147,11 +147,11 @@ export default function EnhancedRecorder({
           
           {recording && (
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 bg-background/80 rounded-md px-2 py-1">
+              <div className="flex items-center space-x-2 bg-background/80 rounded-none px-2 py-1">
                 <Clock className="w-3 h-3 text-muted-foreground" />
                 <span className="font-mono text-xs text-foreground">{formatDuration(recordingDuration)}</span>
               </div>
-              <div className="flex items-center space-x-2 bg-destructive/10 rounded-md px-2 py-1">
+              <div className="flex items-center space-x-2 bg-destructive/10 rounded-none px-2 py-1">
                 <div className="w-2 h-2 bg-destructive rounded-full animate-pulse"></div>
                 <span className="text-xs font-medium text-destructive">Recording</span>
               </div>
@@ -213,7 +213,7 @@ export default function EnhancedRecorder({
 
         {/* Status Indicators */}
         <div className="grid grid-cols-3 gap-3">
-          <div className={`text-center p-3 rounded-md transition-colors ${
+          <div className={`text-center p-3 rounded-none transition-colors ${
             recording 
               ? 'bg-destructive/10 text-destructive border border-destructive/20' 
               : 'bg-muted/30 text-muted-foreground'
@@ -222,7 +222,7 @@ export default function EnhancedRecorder({
             <div className="text-xs">{recording ? 'Active' : 'Inactive'}</div>
           </div>
           
-          <div className={`text-center p-3 rounded-md transition-colors ${
+          <div className={`text-center p-3 rounded-none transition-colors ${
             speaking 
               ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' 
               : 'bg-muted/30 text-muted-foreground'
@@ -231,7 +231,7 @@ export default function EnhancedRecorder({
             <div className="text-xs">{speaking ? 'Detected' : 'Silent'}</div>
           </div>
           
-          <div className={`text-center p-3 rounded-md transition-colors ${
+          <div className={`text-center p-3 rounded-none transition-colors ${
             transcribing 
               ? 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800' 
               : 'bg-muted/30 text-muted-foreground'
@@ -243,7 +243,7 @@ export default function EnhancedRecorder({
 
         {/* Error Display */}
         {hookError && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-none p-4">
             <div className="flex items-start space-x-3">
               <div className="text-destructive">⚠</div>
               <div>

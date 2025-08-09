@@ -28,9 +28,21 @@ export default function StreamingTranscriptDisplay({
   const scrollRef = useRef<HTMLDivElement>(null)
   const editInputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Load transcripts from session storage
+  // Cookie helpers
+  const getCookie = (name: string): string | null => {
+    if (typeof document === 'undefined') return null
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
+    return match ? decodeURIComponent(match[1]) : null
+  }
+  const setCookie = (name: string, value: string, days = 30) => {
+    if (typeof document === 'undefined') return
+    const expires = new Date(Date.now() + days * 864e5).toUTCString()
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`
+  }
+
+  // Load transcripts from cookies
   useEffect(() => {
-    const saved = sessionStorage.getItem('lekhai-transcripts')
+    const saved = getCookie('lekhai_transcripts')
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
@@ -39,14 +51,26 @@ export default function StreamingTranscriptDisplay({
           timestamp: new Date(t.timestamp)
         })))
       } catch (error) {
-        console.error('Failed to load transcripts:', error)
+        console.error('Failed to load transcripts from cookie:', error)
       }
     }
   }, [])
 
-  // Save transcripts to session storage
+  // Save transcripts to cookies (keep last 10, truncate text to fit ~4KB cookie budget)
   useEffect(() => {
-    sessionStorage.setItem('lekhai-transcripts', JSON.stringify(transcripts))
+    const compact = transcripts
+      .slice(0, 10)
+      .map(t => ({
+        ...t,
+        text: t.text.length > 800 ? t.text.slice(0, 800) + '…' : t.text,
+      }))
+    try {
+      setCookie('lekhai_transcripts', JSON.stringify(compact))
+    } catch (e) {
+      // If cookie too large, reduce list length
+      const smaller = compact.slice(0, 5)
+      try { setCookie('lekhai_transcripts', JSON.stringify(smaller)) } catch {}
+    }
   }, [transcripts])
 
   // Handle transcript updates (both during and after recording)
@@ -156,13 +180,13 @@ export default function StreamingTranscriptDisplay({
     : transcripts
 
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-none overflow-hidden">
       {/* Header */}
       <div className="bg-muted/50 px-4 py-4 border-b border-border">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
           <div className="flex items-center space-x-3">
             <h2 className="font-medium text-foreground">Live Transcript</h2>
-            <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-md">
+            <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-none">
               {provider.toUpperCase()}
             </span>
             {isTranscribing && (
@@ -182,7 +206,7 @@ export default function StreamingTranscriptDisplay({
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-8 py-2 text-sm bg-background border border-border rounded-md focus:ring-2 focus:ring-ring focus:border-transparent"
+                className="pl-9 pr-8 py-2 text-sm bg-background border border-border rounded-none focus:ring-2 focus:ring-ring focus:border-transparent"
               />
               {searchTerm && (
                 <button
@@ -228,9 +252,9 @@ export default function StreamingTranscriptDisplay({
         }}
       >
         {filteredTranscripts.length > 0 ? (
-          <div className="space-y-3">
+              <div className="space-y-3">
             {filteredTranscripts.map((entry) => (
-              <div key={entry.id} className="group bg-muted/30 rounded-md p-3 border border-border hover:border-border/80 transition-colors">
+                  <div key={entry.id} className="group bg-muted/30 rounded-none p-3 border border-border hover:border-border/80 transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex-1">
                     {/* Metadata */}
@@ -238,7 +262,7 @@ export default function StreamingTranscriptDisplay({
                       <span className="text-xs text-muted-foreground font-mono">
                         {entry.timestamp.toLocaleTimeString()}
                       </span>
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-md font-medium">
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-none font-medium">
                         {entry.provider.toUpperCase()}
                       </span>
                       {entry.confidence && (
@@ -255,7 +279,7 @@ export default function StreamingTranscriptDisplay({
                           ref={editInputRef}
                           value={currentText}
                           onChange={(e) => setCurrentText(e.target.value)}
-                          className="w-full p-3 bg-background border border-border rounded-md text-foreground focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
+                          className="w-full p-3 bg-background border border-border rounded-none text-foreground focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
                           rows={3}
                         />
                         <div className="flex gap-2">
@@ -303,7 +327,7 @@ export default function StreamingTranscriptDisplay({
         ) : (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-lg flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-none flex items-center justify-center">
                 <svg className="w-8 h-8 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 715 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
                 </svg>

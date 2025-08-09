@@ -14,10 +14,7 @@ interface Transcript {
   processing_time_ms?: number
 }
 
-interface TranscriptHistoryProps {
-  password: string
-  className?: string
-}
+interface TranscriptHistoryProps { password: string; className?: string }
 
 export default function TranscriptHistory({ password, className = '' }: TranscriptHistoryProps) {
   const [transcripts, setTranscripts] = useState<Transcript[]>([])
@@ -27,50 +24,55 @@ export default function TranscriptHistory({ password, className = '' }: Transcri
   const [isSearching, setIsSearching] = useState(false)
   const [stats, setStats] = useState<any>(null)
 
-  // Load recent transcripts on mount
+  // Cookie helpers
+  const getCookie = (name: string): string | null => {
+    if (typeof document === 'undefined') return null
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'))
+    return match ? decodeURIComponent(match[1]) : null
+  }
+  const setCookie = (name: string, value: string, days = 30) => {
+    if (typeof document === 'undefined') return
+    const expires = new Date(Date.now() + days * 864e5).toUTCString()
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`
+  }
+
+  // Load recent transcripts from cookies on mount
   useEffect(() => {
-    loadTranscripts()
-    loadStats()
+    try {
+      const saved = getCookie('lekhai_transcripts')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        setTranscripts(parsed)
+      }
+    } catch (e) {
+      // ignore
+    }
   }, [])
 
   const loadTranscripts = async () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch('/api/transcripts?action=list&limit=20', {
-        headers: {
-          'x-password': password
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to load transcripts')
-      }
-      
-      const data = await response.json()
-      setTranscripts(data.transcripts || [])
+      const saved = getCookie('lekhai_transcripts')
+      const parsed = saved ? JSON.parse(saved) : []
+      setTranscripts(parsed)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load transcripts')
+      setError('Failed to load transcripts from cookies')
     } finally {
       setLoading(false)
     }
   }
 
   const loadStats = async () => {
-    try {
-      const response = await fetch('/api/transcripts?action=stats', {
-        headers: {
-          'x-password': password
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setStats(data)
-      }
-    } catch (err) {
-      console.warn('Failed to load stats:', err)
-    }
+    // Derive simple stats from local list
+    const byProvider: Record<string, number> = {}
+    transcripts.forEach(t => { byProvider[t.provider] = (byProvider[t.provider] || 0) + 1 })
+    setStats({
+      total_transcripts: transcripts.length,
+      total_duration_hours: 0,
+      transcripts_by_provider: Object.entries(byProvider).map(([provider, count]) => ({ provider, count })),
+      recent_activity: [],
+    })
   }
 
   const searchTranscripts = async () => {
@@ -78,54 +80,22 @@ export default function TranscriptHistory({ password, className = '' }: Transcri
       loadTranscripts()
       return
     }
-
     setIsSearching(true)
     setError(null)
     try {
-      const response = await fetch(`/api/transcripts?action=search&search=${encodeURIComponent(searchTerm)}&limit=20`, {
-        headers: {
-          'x-password': password
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Search failed')
-      }
-      
-      const data = await response.json()
-      setTranscripts(data.transcripts || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed')
+      const filtered = transcripts.filter(t => t.transcript_text.toLowerCase().includes(searchTerm.toLowerCase()))
+      setTranscripts(filtered)
     } finally {
       setIsSearching(false)
     }
   }
 
   const deleteTranscript = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this transcript?')) {
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/transcripts/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'x-password': password
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete transcript')
-      }
-      
-      // Remove from local state
-      setTranscripts(prev => prev.filter(t => t.id !== id))
-      
-      // Reload stats
-      loadStats()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete transcript')
-    }
+    if (!confirm('Are you sure you want to delete this transcript?')) return
+    const updated = transcripts.filter(t => t.id !== id)
+    setTranscripts(updated)
+    try { setCookie('lekhai_transcripts', JSON.stringify(updated)) } catch {}
+    loadStats()
   }
 
   const exportTranscript = (transcript: Transcript) => {
@@ -167,12 +137,12 @@ ${transcript.transcript_text}`
 
   if (loading && transcripts.length === 0) {
     return (
-      <div className={`bg-card border border-border rounded-lg p-6 ${className}`}>
+      <div className={`bg-card border border-border rounded-none p-6 ${className}`}>
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-muted rounded w-1/3"></div>
+          <div className="h-6 bg-muted rounded-none w-1/3"></div>
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 bg-muted rounded"></div>
+              <div key={i} className="h-20 bg-muted rounded-none"></div>
             ))}
           </div>
         </div>
@@ -181,12 +151,12 @@ ${transcript.transcript_text}`
   }
 
   return (
-    <div className={`bg-card border border-border rounded-lg overflow-hidden ${className}`}>
+    <div className={`bg-card border border-border rounded-none overflow-hidden ${className}`}>
       {/* Header */}
       <div className="bg-muted/50 px-4 py-4 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary rounded-none flex items-center justify-center">
               <History className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
@@ -206,7 +176,7 @@ ${transcript.transcript_text}`
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && searchTranscripts()}
-              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-md focus:ring-2 focus:ring-ring focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-none focus:ring-2 focus:ring-ring focus:border-transparent"
             />
           </div>
           <Button
@@ -265,7 +235,7 @@ ${transcript.transcript_text}`
 
         {transcripts.length === 0 ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-lg flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-none flex items-center justify-center">
               <Mic className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-medium text-foreground mb-2">No transcripts yet</h3>
@@ -276,10 +246,10 @@ ${transcript.transcript_text}`
         ) : (
           <div className="space-y-3">
             {transcripts.map((transcript) => (
-              <div key={transcript.id} className="group bg-muted/30 rounded-md p-4 hover:bg-muted/50 transition-colors">
+              <div key={transcript.id} className="group bg-muted/30 rounded-none p-4 hover:bg-muted/50 transition-colors">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getProviderColor(transcript.provider)}`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-none border ${getProviderColor(transcript.provider)}`}>
                       {transcript.provider.toUpperCase()}
                     </span>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">

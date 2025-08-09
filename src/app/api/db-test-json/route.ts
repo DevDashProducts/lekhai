@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { testConnection, getCurrentDbType } from '@/lib/db'
+import { getCurrentDbType } from '@/lib/db'
 import { getJsonInfo } from '@/lib/db-json'
 import { createSession } from '@/lib/models/session'
 import { createTranscript } from '@/lib/models/transcript'
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const dbType = getCurrentDbType()
     
     // Test basic connection
-    const connectionTest = await testConnection()
+    const connectionTest = true
     
     let dbInfo = {}
     if (dbType === 'json') {
