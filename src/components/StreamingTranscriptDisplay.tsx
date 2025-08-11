@@ -21,6 +21,7 @@ export default function StreamingTranscriptDisplay({
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([])
   const [currentText, setCurrentText] = useState('')
   const [activeId, setActiveId] = useState<string | null>(null)
+  const prevRecordingRef = useRef<boolean>(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -49,49 +50,37 @@ export default function StreamingTranscriptDisplay({
     })()
   }, [])
 
-  // While recording/transcribing: maintain a single active entry and update its text in place
+  // Detect start of a recording session and create exactly one active entry
   useEffect(() => {
-    const text = typeof transcript.text === 'string' ? transcript.text : ''
-    if (!text.trim()) return
-
-    setCurrentText(text)
-
-    setTranscripts(prev => {
-      // If there is no active entry and we are in a live state, create one at the top
-      if ((_isRecording || isTranscribing) && !activeId) {
-        const id = `active-${Date.now()}`
-        setActiveId(id)
-        const newEntry: TranscriptEntry = {
+    const started = !_isRecording ? false : !prevRecordingRef.current && _isRecording
+    if (started) {
+      const id = `active-${Date.now()}`
+      setActiveId(id)
+      setTranscripts(prev => [
+        {
           id,
-          text,
+          text: '',
           provider,
           timestamp: new Date(),
-          duration: transcript.duration,
-          confidence: transcript.confidence,
-        }
-        return [newEntry, ...prev]
-      }
+          duration: undefined,
+          confidence: undefined,
+        },
+        ...prev,
+      ])
+    }
+    prevRecordingRef.current = _isRecording
+  }, [_isRecording, provider])
 
-      // Update active entry text if it exists
-      if (activeId) {
-        return prev.map(t => t.id === activeId
-          ? { ...t, text, duration: transcript.duration, confidence: transcript.confidence }
-          : t
-        )
-      }
-
-      // Not recording/transcribing and no active entry -> treat as a finalized, standalone addition
-      const finalized: TranscriptEntry = {
-        id: Date.now().toString(),
-        text,
-        provider,
-        timestamp: new Date(),
-        duration: transcript.duration,
-        confidence: transcript.confidence,
-      }
-      return [finalized, ...prev]
-    })
-  }, [transcript.text, transcript.duration, transcript.confidence, provider, _isRecording, isTranscribing, activeId])
+  // While recording/transcribing: update active entry text in place
+  useEffect(() => {
+    const text = typeof transcript.text === 'string' ? transcript.text : ''
+    if (!text.trim() || !activeId) return
+    setCurrentText(text)
+    setTranscripts(prev => prev.map(t => t.id === activeId
+      ? { ...t, text, duration: transcript.duration, confidence: transcript.confidence }
+      : t
+    ))
+  }, [transcript.text, transcript.duration, transcript.confidence, activeId])
 
   // When recording stops and processing finishes, finalize the active entry and persist it once
   useEffect(() => {
@@ -111,6 +100,7 @@ export default function StreamingTranscriptDisplay({
         }
         addTranscript(record).catch(() => {})
       }
+      // Keep the active card visible but mark as finalized by dropping the activeId; next session will create a new one
       setActiveId(null)
     }
   }, [_isRecording, isTranscribing, activeId, transcripts])
