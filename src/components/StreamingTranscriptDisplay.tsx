@@ -20,6 +20,7 @@ export default function StreamingTranscriptDisplay({
 }: StreamingTranscriptDisplayProps) {
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([])
   const [currentText, setCurrentText] = useState('')
+  const [activeId, setActiveId] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -48,49 +49,71 @@ export default function StreamingTranscriptDisplay({
     })()
   }, [])
 
-  // Persist to IndexedDB when a new transcript arrives
+  // While recording/transcribing: maintain a single active entry and update its text in place
   useEffect(() => {
-    if (!transcript?.text || !transcript.text.trim()) return
-    const record = {
-      id: Date.now().toString(),
-      provider,
-      text: transcript.text,
-      createdAt: Date.now(),
-      duration: transcript.duration,
-      confidence: transcript.confidence,
-    }
-    addTranscript(record).catch(() => {})
-  }, [transcript.text, transcript.duration, transcript.confidence, provider])
+    const text = typeof transcript.text === 'string' ? transcript.text : ''
+    if (!text.trim()) return
 
-  // Handle transcript updates (both during and after recording)
-  useEffect(() => {
-    if (typeof transcript.text === 'string' && transcript.text.trim()) {
-      setCurrentText(transcript.text)
-      
-      // Create transcript entry when we get a new transcript
-      const newEntry: TranscriptEntry = {
+    setCurrentText(text)
+
+    setTranscripts(prev => {
+      // If there is no active entry and we are in a live state, create one at the top
+      if ((_isRecording || isTranscribing) && !activeId) {
+        const id = `active-${Date.now()}`
+        setActiveId(id)
+        const newEntry: TranscriptEntry = {
+          id,
+          text,
+          provider,
+          timestamp: new Date(),
+          duration: transcript.duration,
+          confidence: transcript.confidence,
+        }
+        return [newEntry, ...prev]
+      }
+
+      // Update active entry text if it exists
+      if (activeId) {
+        return prev.map(t => t.id === activeId
+          ? { ...t, text, duration: transcript.duration, confidence: transcript.confidence }
+          : t
+        )
+      }
+
+      // Not recording/transcribing and no active entry -> treat as a finalized, standalone addition
+      const finalized: TranscriptEntry = {
         id: Date.now().toString(),
-        text: transcript.text,
+        text,
         provider,
         timestamp: new Date(),
         duration: transcript.duration,
         confidence: transcript.confidence,
       }
+      return [finalized, ...prev]
+    })
+  }, [transcript.text, transcript.duration, transcript.confidence, provider, _isRecording, isTranscribing, activeId])
 
-      setTranscripts(prev => {
-        // Check if this transcript already exists (prevent duplicates)
-        const exists = prev.some(t => t.text === transcript.text && 
-          Math.abs(t.timestamp.getTime() - newEntry.timestamp.getTime()) < 5000)
-        
-        if (exists) {
-          return prev
+  // When recording stops and processing finishes, finalize the active entry and persist it once
+  useEffect(() => {
+    if (!activeId) return
+
+    // Finalize only when both flags are false
+    if (!_isRecording && !isTranscribing) {
+      const entry = transcripts.find(t => t.id === activeId)
+      if (entry && entry.text.trim()) {
+        const record = {
+          id: entry.id,
+          provider: entry.provider,
+          text: entry.text,
+          createdAt: entry.timestamp.getTime(),
+          duration: entry.duration,
+          confidence: entry.confidence,
         }
-        
-        // Add new transcript at the beginning (latest first)
-        return [newEntry, ...prev]
-      })
+        addTranscript(record).catch(() => {})
+      }
+      setActiveId(null)
     }
-  }, [transcript.text, provider, transcript.duration, transcript.confidence])
+  }, [_isRecording, isTranscribing, activeId, transcripts])
 
   // Auto-scroll to top (since latest is first)
   useEffect(() => {
@@ -169,58 +192,61 @@ export default function StreamingTranscriptDisplay({
   return (
     <div className="bg-card border border-border rounded-none overflow-hidden">
       {/* Header */}
-      <div className="bg-muted/50 px-4 py-4 border-b border-border">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
-          <div className="flex items-center space-x-3">
-            <h2 className="font-medium text-foreground">Live Transcript</h2>
-            <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-none">
+      <div className="bg-muted/50 px-4 border-b border-border">
+        <div className="h-14 flex items-center justify-between gap-3">
+          {/* Left cluster */}
+          <div className="flex items-center gap-3 min-w-0">
+            <h2 className="font-medium text-foreground truncate">Live Transcript</h2>
+            <span className="px-2 py-0.5 leading-5 bg-primary/10 text-primary text-xs font-medium rounded-none whitespace-nowrap">
               {provider.toUpperCase()}
             </span>
-            {isTranscribing && (
-              <div className="flex items-center space-x-1 text-xs text-yellow-600">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                <span>Processing...</span>
-              </div>
-            )}
+            {/* Reserve space to avoid header height/width shift */}
+            <div className={`hidden sm:flex items-center gap-2 text-xs ${isTranscribing ? 'text-yellow-600' : 'text-muted-foreground'} w-28 whitespace-nowrap`}>
+              <div className={`w-2 h-2 rounded-full ${isTranscribing ? 'bg-yellow-500 animate-pulse' : 'bg-transparent'}`}></div>
+              <span className={`${isTranscribing ? 'opacity-100' : 'opacity-0'}`}>Processing...</span>
+            </div>
           </div>
-          
-          <div className="flex flex-wrap items-center gap-2">
+
+          {/* Right cluster */}
+          <div className="flex items-center gap-2 min-w-0">
             {/* Search */}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            <div className="relative flex-none w-56 sm:w-64">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-8 py-2 text-sm bg-background border border-border rounded-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                className="w-full pl-9 pr-8 py-2 text-sm bg-background border border-border rounded-none focus:ring-2 focus:ring-ring focus:border-transparent whitespace-nowrap"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
-            
+
             {/* Actions */}
             <Button
               variant="ghost"
               size="sm"
               onClick={copyAllTranscripts}
-              className="text-muted-foreground hover:text-foreground"
+              className="flex-none text-muted-foreground hover:text-foreground"
+              aria-label="Copy all"
             >
               {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
             </Button>
-            
             <Button
               variant="ghost"
               size="sm"
               onClick={downloadTranscripts}
-              className="text-muted-foreground hover:text-foreground"
+              className="flex-none text-muted-foreground hover:text-foreground"
               disabled={transcripts.length === 0}
+              aria-label="Download"
             >
               <Download className="w-4 h-4" />
             </Button>

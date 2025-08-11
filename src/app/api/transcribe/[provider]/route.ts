@@ -13,7 +13,7 @@ const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX_REQUESTS = 20
 const ipToRequests: Map<string, number[]> = new Map()
 
-function isRateLimited(ip: string): boolean {
+  function isRateLimited(ip: string): boolean {
   const now = Date.now()
   const windowStart = now - RATE_LIMIT_WINDOW_MS
   const history = ipToRequests.get(ip) || []
@@ -38,9 +38,10 @@ export async function POST(
       return errorResponse({ error_code: 'UNAUTHORIZED', message: 'Unauthorized' }, 401)
     }
 
-    // Rate limit by IP
+    // Rate limit by IP (disabled in non-production to support streaming)
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    if (isRateLimited(ip)) {
+    const isProd = process.env.NODE_ENV === 'production'
+    if (isProd && isRateLimited(ip)) {
       return errorResponse({ error_code: 'RATE_LIMITED', message: 'Too many requests. Please try again shortly.' }, 429)
     }
 

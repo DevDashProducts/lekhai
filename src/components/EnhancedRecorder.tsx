@@ -123,8 +123,8 @@ export default function EnhancedRecorder({
 
   const getRecordingButtonState = () => {
     if (!isReady) return { text: 'Initializing...', disabled: true, variant: 'outline' as const }
-    if (transcribing) return { text: 'Processing...', disabled: false, variant: 'outline' as const }
     if (recording) return { text: 'Stop Recording', disabled: false, variant: 'destructive' as const }
+    if (transcribing) return { text: 'Processing...', disabled: true, variant: 'outline' as const }
     return { text: 'Start Recording', disabled: false, variant: 'default' as const }
   }
 
@@ -199,10 +199,10 @@ export default function EnhancedRecorder({
             className="px-8 py-6 text-lg font-medium"
           >
             <div className="flex items-center space-x-2">
-              {transcribing ? (
-                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : recording ? (
+              {recording ? (
                 <Square className="w-5 h-5" />
+              ) : transcribing ? (
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Mic className="w-5 h-5" />
               )}
