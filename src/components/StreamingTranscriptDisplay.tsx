@@ -27,6 +27,7 @@ export default function StreamingTranscriptDisplay({
   const [searchTerm, setSearchTerm] = useState('')
   const [copied, setCopied] = useState(false)
   const [autoScroll, setAutoScroll] = useState(true)
+  const [order, setOrder] = useState<'newest' | 'oldest'>('newest')
   
   const scrollRef = useRef<HTMLDivElement>(null)
   const editInputRef = useRef<HTMLTextAreaElement>(null)
@@ -105,12 +106,24 @@ export default function StreamingTranscriptDisplay({
     }
   }, [_isRecording, isTranscribing, activeId, transcripts])
 
-  // Auto-scroll to top (since latest is first)
+  // Auto-scroll to latest depending on order
   useEffect(() => {
-    if (autoScroll && scrollRef.current) {
-      scrollRef.current.scrollTop = 0
+    if (!autoScroll || !scrollRef.current) return
+    const target = scrollRef.current
+    if (order === 'newest') {
+      target.scrollTop = 0
+    } else {
+      target.scrollTop = target.scrollHeight
     }
-  }, [transcripts, autoScroll])
+  }, [transcripts, autoScroll, order])
+
+  // Keep active entry in view while streaming
+  useEffect(() => {
+    if (!autoScroll || !activeId) return
+    const el = document.getElementById(`transcript-${activeId}`)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: order === 'newest' ? 'start' : 'end' })
+  }, [currentText, activeId, autoScroll, order])
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -178,6 +191,7 @@ export default function StreamingTranscriptDisplay({
   const filteredTranscripts = searchTerm.trim()
     ? transcripts.filter(t => t.text.toLowerCase().includes(searchTerm.toLowerCase()))
     : transcripts
+  const displayedTranscripts = order === 'newest' ? filteredTranscripts : [...filteredTranscripts].reverse()
 
   return (
     <div className="bg-card border border-border rounded-none overflow-hidden">
@@ -199,6 +213,21 @@ export default function StreamingTranscriptDisplay({
 
           {/* Right cluster */}
           <div className="flex items-center gap-2 min-w-0">
+            {/* Order toggle */}
+            <div className="hidden sm:flex items-center rounded-none border border-border">
+              <button
+                className={`px-2.5 py-1 text-xs ${order === 'newest' ? 'bg-background text-foreground' : 'text-muted-foreground'}`}
+                onClick={() => setOrder('newest')}
+              >
+                Newest
+              </button>
+              <button
+                className={`px-2.5 py-1 text-xs border-l border-border ${order === 'oldest' ? 'bg-background text-foreground' : 'text-muted-foreground'}`}
+                onClick={() => setOrder('oldest')}
+              >
+                Oldest
+              </button>
+            </div>
             {/* Search */}
             <div className="relative flex-none w-56 sm:w-64">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -250,14 +279,15 @@ export default function StreamingTranscriptDisplay({
         className="max-h-80 sm:max-h-96 overflow-y-auto p-4"
         onScroll={(e) => {
           const target = e.target as HTMLDivElement
-          const isAtTop = target.scrollTop <= 10
-          setAutoScroll(isAtTop)
+          const nearTop = target.scrollTop <= 10
+          const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight <= 10
+          setAutoScroll(order === 'newest' ? nearTop : nearBottom)
         }}
       >
-        {filteredTranscripts.length > 0 ? (
+        {displayedTranscripts.length > 0 ? (
               <div className="space-y-3">
-            {filteredTranscripts.map((entry) => (
-                  <div key={entry.id} className="group bg-muted/30 rounded-none p-3 border border-border hover:border-border/80 transition-colors">
+            {displayedTranscripts.map((entry) => (
+                  <div id={`transcript-${entry.id}`} key={entry.id} className={`group bg-muted/30 rounded-none p-3 border transition-colors ${entry.id === activeId ? 'border-primary/60' : 'border-border hover:border-border/80'}` }>
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex-1">
                     {/* Metadata */}
@@ -353,7 +383,10 @@ export default function StreamingTranscriptDisplay({
             size="sm"
             onClick={() => {
               setAutoScroll(true)
-              scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+              const target = scrollRef.current
+              if (!target) return
+              const top = order === 'newest' ? 0 : target.scrollHeight
+              target.scrollTo({ top, behavior: 'smooth' })
             }}
             className="text-sm"
           >

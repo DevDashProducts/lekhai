@@ -64,15 +64,19 @@ export default function SpeechToText({ password }: SpeechToTextProps) {
 
         {/* Main Content */}
         {!showHistory ? (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-7xl mx-auto">
-            <EnhancedRecorder
-              provider={provider}
-              onProviderChange={setProvider}
-              password={password}
-              onTranscriptUpdate={handleTranscriptUpdate}
-              onRecordingStateChange={handleRecordingStateChange}
-              onTranscribingStateChange={handleTranscribingStateChange}
-            />
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[420px_minmax(0,1fr)] gap-6">
+            {/* Left: Recorder panel stays visible */}
+            <div className="lg:sticky lg:top-[calc(var(--navbar-height)+1rem)] self-start">
+              <EnhancedRecorder
+                provider={provider}
+                onProviderChange={setProvider}
+                password={password}
+                onTranscriptUpdate={handleTranscriptUpdate}
+                onRecordingStateChange={handleRecordingStateChange}
+                onTranscribingStateChange={handleTranscribingStateChange}
+              />
+            </div>
+            {/* Right: Transcript feed */}
             <StreamingTranscriptDisplay
               transcript={currentTranscript || { text: '' }}
               provider={provider}
@@ -89,19 +93,6 @@ export default function SpeechToText({ password }: SpeechToTextProps) {
           </div>
         )}
 
-        {/* Footer */}
-        <footer className="text-center py-8 border-t border-border mt-8">
-          <p className="text-sm text-muted-foreground">
-            Built by <span className="text-primary font-medium">DevDash Labs</span>
-          </p>
-          <div className="flex items-center justify-center space-x-4 text-xs text-muted-foreground mt-2">
-            <span>OpenAI Whisper</span>
-            <span>•</span>
-            <span>ElevenLabs</span>
-            <span>•</span>
-            <span>Google Gemini</span>
-          </div>
-        </footer>
       </div>
     </div>
   )

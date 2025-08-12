@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,9 +41,10 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider>
           <Header />
-          <main className="min-h-[calc(100dvh-var(--navbar-height))]">
+          <main className="min-h-[calc(100dvh-var(--navbar-height)-var(--footer-height))]">
             {children}
           </main>
+          <Footer />
         </ThemeProvider>
       </body>
     </html>

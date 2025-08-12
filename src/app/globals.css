@@ -46,6 +46,7 @@
   --navbar-height: 4.375rem; /* 80px */
   --sidebar-collapse-width: 4.25rem; /* 68px */
   --sidebar-expand-width: 16rem; /* 256px */
+  --footer-height: 4rem;
 }
 
 @theme inline {
